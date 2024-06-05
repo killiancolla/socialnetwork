@@ -10,11 +10,42 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/lib/AuthContext";
+
+export interface User {
+  userId: string;
+  email: string;
+  username: string;
+}
 
 export default function Home() {
 
   const [commentState, setCommentState] = useState(false)
+  const { user } = useAuth();
+  const [dataUser, setDataUser] = useState<User | null>(null);
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (user) {
+        const res = await fetch(`/api/users/${user.userId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setDataUser(data)
+          console.log(data);
+        } else {
+          console.error('Error fetching user data');
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [user]);
 
   return (
     <section className="h-min flex justify-center">
@@ -24,7 +55,7 @@ export default function Home() {
         <Card className="w-1/5 h-min p-2 flex flex-col justify-center items-center gap-2 aspect-square">
           <div className="flex items-center flex-col gap-2">
             <img className=" h-16 rounded-full aspect-square object-cover" src="/pp.jpg" />
-            <h2 className=" font-thin">@frosteel</h2>
+            <h2 className=" font-thin">@{dataUser?.username}</h2>
             <div className="flex gap-2">
               <p className="flex flex-col items-center">5<span className=" text-xs">followers</span></p>
               <p className="flex flex-col items-center">5 <span className="text-xs">follow</span></p>

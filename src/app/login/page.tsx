@@ -6,14 +6,21 @@ import { Label } from "@/components/ui/label";
 import SparklesText from "@/components/ui/sparkles-text";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Cookies from 'js-cookie';
-import { useRouter } from 'next/navigation';
 import { useState } from "react";
+import { useRouter } from 'next/navigation';
+import { useAuth } from '../../lib/AuthContext'
 
 export default function Login() {
 
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [loginEmail, setLoginEmail] = useState('');
+    const [loginPassword, setLoginPassword] = useState('');
+    const [signinEmail, setSigninEmail] = useState('');
+    const [signinPassword, setSigninPassword] = useState('');
+    const [signinUsername, setSigninUsername] = useState('');
+    const [selectedTab, setSelectedTab] = useState('login')
+    const { login } = useAuth();
     const router = useRouter();
+
 
     const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -22,51 +29,74 @@ export default function Login() {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ email, password }),
+            body: JSON.stringify({ email:loginEmail, password:loginPassword }),
         });
 
         if (res.ok) {
             const data = await res.json();
-            Cookies.set('token', data.token, { expires: 1 });
+            login(data.token);
             router.push('/');
         } else {
             console.error('Error logging in');
         }
     };
 
+    const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email:signinEmail, password:signinPassword, username: signinUsername }),
+        });
+
+        if (res.ok) {
+            setSelectedTab('login')
+            setLoginEmail('')
+            setLoginPassword('')
+            setSigninEmail('')
+            setSigninPassword('')
+            setSigninUsername('')
+        } else {
+            console.error(res);
+        }
+    };
+
     return (
-        <section className="flex flex-grow w-screen justify-center items-center">
-            <Tabs defaultValue="login" className="w-1/2 px-36 flex gap-2 flex-col items-center">
-                <TabsList className="w-min absolute top-16">
-                    <TabsTrigger value="login">Log In</TabsTrigger>
-                    <TabsTrigger value="signin">Sign In</TabsTrigger>
+        <section className="relative flex flex-grow justify-center items-center">
+            <Tabs defaultValue="login" className="flex gap-2 flex-col items-center w-1/2 max-lg:w-full" value={selectedTab}>
+                <TabsList className="absolute top-4">
+                    <TabsTrigger value="login" onClick={() => setSelectedTab('login')}>Log In</TabsTrigger>
+                    <TabsTrigger value="signin" onClick={() => setSelectedTab('signin')}>Sign In</TabsTrigger>
                 </TabsList>
-                <TabsContent value="login">
+                <TabsContent className="max-sm:w-5/6 w-1/2" value="login">
                     <form onSubmit={handleLogin} className="flex flex-col gap-1">
                         <SparklesText text="Hello" className=" text-center" />
                         <h2 className="text-center text-2xl font-bold mb-6">Welcome Back</h2>
                         <Label htmlFor="email">Email</Label>
-                        <Input type="email" id="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                        <Input type="email" id="email" placeholder="Email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} />
                         <Label htmlFor="password">Password</Label>
-                        <Input type="password" id="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+                        <Input type="password" id="password" placeholder="Password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} />
                         <a className=" text-xs text-right mb-6">Forgot password ?</a>
                         <Button type="submit">Submit</Button>
                     </form>
                 </TabsContent>
-                <TabsContent value="signin">
-                    <form onSubmit={handleLogin} className="">
+                <TabsContent className="max-sm:w-5/6 w-1/2" value="signin">
+                    <form onSubmit={handleRegister} className="flex flex-col gap-1">
                         <SparklesText text="Welcome" className=" text-center" />
                         <h2 className="text-center text-2xl font-bold mb-6">Join Us!</h2>
                         <Label htmlFor="email">Email</Label>
-                        <Input type="email" id="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                        <Input type="email" id="email" placeholder="Email" value={signinEmail} onChange={(e) => setSigninEmail(e.target.value)} />
                         <Label htmlFor="password">Password</Label>
-                        <Input type="password" id="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
-                        <a className=" text-xs text-right mb-6">Forgot password ?</a>
+                        <Input type="password" id="password" placeholder="Password" value={signinPassword} onChange={(e) => setSigninPassword(e.target.value)} />
+                        <Label htmlFor="username">Username</Label>
+                        <Input className="mb-6" type="text" id="username" placeholder="Username" value={signinUsername} onChange={(e) => setSigninUsername(e.target.value)} />
                         <Button type="submit">Submit</Button>
                     </form>
                 </TabsContent>
             </Tabs>
-            <div className="w-1/2 bg-red-200 h-full"></div>
+            <div className="max-lg:hidden w-1/2 bg-red-200 h-full"></div>
         </section>
     )
 }

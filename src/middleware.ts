@@ -7,8 +7,6 @@ const secret = new TextEncoder().encode(process.env.JWT_SECRET);
 export async function middleware(request: NextRequest) {
     const token = request.cookies.get('token')?.value;
 
-    console.log('Token:', token);
-
     if (!token) {
         console.log('No token found, redirecting to /login');
         return NextResponse.redirect(new URL('/login', request.url));
@@ -30,6 +28,7 @@ export const config = {
         '/dc/:path*',
         '/account/:path*',
         '/test/:path*',
-        '/'
+        '/',
+        '/api/users/:path*'
     ],
 };

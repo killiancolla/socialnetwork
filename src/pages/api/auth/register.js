@@ -9,10 +9,10 @@ export default async function handler(req, res) {
 
     await connectToDatabase();
 
-    const { email, password } = req.body;
+    const { email, password, username } = req.body;
 
-    if (!email || !password) {
-        return res.status(400).json({ message: 'Email and password are required' });
+    if (!email || !password || !username) {
+        return res.status(400).json({ message: 'Email, password and username are required' });
     }
 
     const existingUser = await User.findOne({ email });
@@ -26,6 +26,7 @@ export default async function handler(req, res) {
     const user = new User({
         email,
         password: hashedPassword,
+        username: username
     });
 
     await user.save();

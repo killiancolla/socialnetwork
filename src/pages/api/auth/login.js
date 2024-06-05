@@ -30,19 +30,8 @@ export default async function handler(req, res) {
     }
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-        expiresIn: '1h', // Le token expirera après 1 heure
+        expiresIn: '1h',
     });
 
-    res.setHeader(
-        'Set-Cookie',
-        cookie.serialize('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV !== 'development',
-            maxAge: 3600,
-            sameSite: 'strict',
-            path: '/',
-        })
-    );
-
-    res.status(200).json({ message: 'Login successful' });
+    res.status(200).json({ token: token });
 }
