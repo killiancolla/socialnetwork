@@ -19,8 +19,8 @@ export default function NavBar() {
     };
 
     return (
-        <div className="bg-secondary h-14 flex items-center justify-around">
-            <a href="/">
+        <div className="relative bg-secondary h-14 flex items-center justify-around">
+            <a href="/" className="absolute left-10">
                 <Image
                     src='/logo.svg'
                     width={50}
@@ -37,7 +37,7 @@ export default function NavBar() {
                     <Input className="w-1/3 bg-primary border-0" placeholder="Search friend" />
                 </>
             ) : ''}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-4 absolute right-10">
                 {isAuthenticated ? (
                     <>
                         <button onClick={handleLogout}>Logout</button>
