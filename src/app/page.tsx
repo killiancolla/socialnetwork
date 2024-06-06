@@ -33,8 +33,9 @@ export default function Home() {
 
   const { user } = useAuth();
   const [dataUser, setDataUser] = useState<User | null>(null);
-  const [postValue, setPostValue] = useState('')
+  const [postValue, setPostValue] = useState('');
   const [posts, setPosts] = useState<Post[]>([]);
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -98,8 +99,6 @@ export default function Home() {
 
   const handlePost = async (e: React.FormEvent<HTMLFormElement>) => {
 
-    console.log(JSON.stringify({ userId: dataUser?._id, text: postValue, images: [] }));
-
     e.preventDefault();
     const res = await fetch('/api/posts/create', {
       method: 'POST',
@@ -110,17 +109,40 @@ export default function Home() {
     });
 
     if (res.ok) {
+      const data: Post = await res.json();
       console.log('Post add');
+      setPosts([data, ...posts]);
+      setIsDialogOpen(false)
     } else {
       console.error('Error logging in');
     }
   };
 
+  function calculateHoursElapsed(timestamp: string): string {
+    const pastDate = new Date(timestamp);
+    const currentDate = new Date();
+    const differenceInMilliseconds = currentDate.getTime() - pastDate.getTime();
+
+    const differenceInMinutes = differenceInMilliseconds / (1000 * 60);
+    if(differenceInMinutes >= 60*48) {
+      return Math.floor((differenceInMinutes) / (24*60)).toString() + " days ago"
+    } else if(differenceInMinutes >= 60*24) {
+      return Math.floor((differenceInMinutes) / (24*60)).toString() + " day ago"
+    } else if(differenceInMinutes >= 60) {
+      return Math.floor(differenceInMinutes/60).toString() + " hours ago"
+    } else if(differenceInMinutes >= 2) {
+      return Math.floor(differenceInMinutes).toString() + " minutes ago"
+    } else {
+      return "Now"
+    }
+
+  }
+
   return (
     <section className="h-min flex justify-center">
       {/* Main card */}
       <div className=" w-11/12 my-10 h-min flex flex-col items-center">
-        <Dialog>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button className="w-3/5">Add Post</Button>
           </DialogTrigger>
@@ -165,7 +187,7 @@ export default function Home() {
                           <img className=" h-8 rounded-full aspect-square object-cover" src="/pp.jpg" />
                           <div>
                             <p className=" text-sm">@{post.userId.username}</p>
-                            <p className="text-sm font-thin">{post.createdAt} hours ago</p>
+                            <p className="text-sm font-thin">{calculateHoursElapsed(post.createdAt)}</p>
                           </div>
                         </div>
                       </CardTitle>

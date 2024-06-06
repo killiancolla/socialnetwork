@@ -18,7 +18,8 @@ export default async function handler(req, res) {
         });
 
         await post.save();
-        res.status(201).json(post);
+        const populatedPost = await Post.findById(post._id).populate('userId', '_id email username');
+        res.status(201).json(populatedPost);
     } catch (error) {
         res.status(500).json({ message: 'Internal server error', error });
     }
