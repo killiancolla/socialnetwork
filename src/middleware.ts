@@ -1,4 +1,3 @@
-// src/middleware.ts
 import { jwtVerify } from 'jose';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -29,6 +28,8 @@ export const config = {
         '/account/:path*',
         '/test/:path*',
         '/',
-        '/api/users/:path*'
+        '/api/users/:path*',
+        '/api/comments/:path*',
+        '/api/posts/:path*',
     ],
 };
