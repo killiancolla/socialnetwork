@@ -5,10 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import SparklesText from "@/components/ui/sparkles-text";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import Cookies from 'js-cookie';
-import { useState } from "react";
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../lib/AuthContext'
+import { useState } from "react";
+import { useAuth } from '../../lib/AuthContext';
 
 export default function Login() {
 
@@ -29,7 +28,7 @@ export default function Login() {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ email:loginEmail, password:loginPassword }),
+            body: JSON.stringify({ email: loginEmail, password: loginPassword }),
         });
 
         if (res.ok) {
@@ -48,7 +47,7 @@ export default function Login() {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ email:signinEmail, password:signinPassword, username: signinUsername }),
+            body: JSON.stringify({ email: signinEmail, password: signinPassword, username: signinUsername }),
         });
 
         if (res.ok) {
@@ -65,7 +64,7 @@ export default function Login() {
 
     return (
         <section className="relative flex flex-grow justify-center items-center">
-            <Tabs defaultValue="login" className="flex gap-2 flex-col items-center w-1/2 max-lg:w-full" value={selectedTab}>
+            <Tabs className="flex gap-2 flex-col items-center w-1/2 max-lg:w-full" value={selectedTab}>
                 <TabsList className="absolute top-4">
                     <TabsTrigger value="login" onClick={() => setSelectedTab('login')}>Log In</TabsTrigger>
                     <TabsTrigger value="signin" onClick={() => setSelectedTab('signin')}>Sign In</TabsTrigger>

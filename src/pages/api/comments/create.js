@@ -1,4 +1,5 @@
 import connectToDatabase from '../../../lib/mongoose';
+import Comment from '../../../models/Comment';
 import Post from '../../../models/Post';
 
 export default async function handler(req, res) {
@@ -8,21 +9,26 @@ export default async function handler(req, res) {
 
     await connectToDatabase();
 
-    const { userId, text, images } = req.body;
-
-    if (!userId || !text) {
-        return res.status(400).json({ message: 'UserId and text are required' });
-    }
+    const { userId, postId, text, likes } = req.body;
 
     try {
-        const post = new Post({
+        const comment = new Comment({
             userId,
+            postId,
             text,
-            images,
+            likes
         });
 
-        await post.save();
-        res.status(201).json(post);
+        const savedComment = await comment.save();
+        await Post.findByIdAndUpdate(
+            postId,
+            { $push: { comments: savedComment._id } },
+            { new: true }
+        );
+
+        const populatedComment = await savedComment.populate('userId', 'username email');
+
+        res.status(201).json(populatedComment);
     } catch (error) {
         res.status(500).json({ message: 'Internal server error', error });
     }
