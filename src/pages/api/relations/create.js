@@ -1,5 +1,5 @@
 import connectToDatabase from '../../../lib/mongoose';
-import Post from '../../../models/Post';
+import Relation from '../../../models/Relation';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -8,18 +8,16 @@ export default async function handler(req, res) {
 
     await connectToDatabase();
 
-    const { userId, text, images } = req.body;
+    const { followerId, followingId } = req.body;
 
     try {
-        const post = new Post({
-            userId,
-            text,
-            images,
+        const relation = new Relation({
+            followerId,
+            followingId
         });
 
-        await post.save();
-        const populatedPost = await Post.findById(post._id).populate('userId', '_id email username avatar');
-        res.status(201).json(populatedPost);
+        await relation.save();
+        res.status(201).json(relation);
     } catch (error) {
         res.status(500).json({ message: 'Internal server error', error });
     }

@@ -20,18 +20,17 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/AuthContext";
 import { Post } from "@/types/Post";
+import { User } from "@/types/User";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
-export interface User {
-  _id: string;
-  email: string;
-  username: string;
-}
+
 
 export default function Home() {
   const { user } = useAuth();
   const [dataUser, setDataUser] = useState<User | null>(null);
+  const [allUser, setAllUser] = useState<User[] | null>([])
+
   const [postValue, setPostValue] = useState('');
   const [posts, setPosts] = useState<Post[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
@@ -58,6 +57,27 @@ export default function Home() {
 
     fetchUserData();
   }, [user]);
+
+  useEffect(() => {
+    const fetchAllUserData = async () => {
+      const res = await fetch(`/api/users/get`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setAllUser(data);
+        console.log(data);
+      } else {
+        console.error('Error fetching user data');
+      }
+    };
+
+    fetchAllUserData();
+  }, []);
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -120,6 +140,24 @@ export default function Home() {
     setPosts(posts.map(post =>
       post._id.toString() === postId ? { ...post, textComment: value } : post
     ));
+  };
+
+  const handleRelation = async (e: React.MouseEvent<HTMLButtonElement>, followingId: string) => {
+    e.preventDefault();
+    const res = await fetch('/api/relations/create', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ followerId: dataUser?._id, followingId: followingId }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      console.log("Relation add");
+    } else {
+      console.error('Error logging in');
+    }
   };
 
   const handleCommentPost = async (e: React.FormEvent<HTMLFormElement>, postId: string) => {
@@ -196,7 +234,7 @@ export default function Home() {
           {/* Left card */}
           <Card className="w-1/5 h-min p-2 flex flex-col justify-center items-center gap-2 aspect-square">
             <div className="flex items-center flex-col gap-2">
-              <img className=" h-16 rounded-full aspect-square object-cover" src="/pp.jpg" />
+              <img className=" h-16 rounded-full aspect-square object-cover" src={dataUser?.avatar} />
               <h2 className=" font-thin">@{dataUser?.username}</h2>
               <div className="flex gap-2">
                 <p className="flex flex-col items-center">5<span className=" text-xs">followers</span></p>
@@ -214,7 +252,7 @@ export default function Home() {
                   <Card className="pt-6" key={post._id.toString()}>
                     <CardTitle className="px-6">
                       <div className="flex items-center gap-3">
-                        <img className=" h-8 rounded-full aspect-square object-cover" src="/pp.jpg" />
+                        <img className=" h-8 rounded-full aspect-square object-cover" src={post.userId.avatar} />
                         <div>
                           <p className=" text-sm">@{post.userId.username}</p>
                           <p className="text-sm font-thin">{calculateHoursElapsed(post.createdAt)}</p>
@@ -291,7 +329,7 @@ export default function Home() {
                           {post.comments.map((comment) => (
                             <div className="p-6 border-b-2" key={comment._id.toString()}>
                               <div className="flex items-center gap-3">
-                                <img className=" h-8 rounded-full aspect-square object-cover" src="/pp.jpg" />
+                                <img className=" h-8 rounded-full aspect-square object-cover" src={comment.userId.avatar} />
                                 <div>
                                   <p className=" text-sm">@{comment.userId.username}</p>
                                   <p className="text-sm font-thin">{calculateHoursElapsed(comment.createdAt)}</p>
@@ -315,34 +353,17 @@ export default function Home() {
           {/* Right card */}
           <Card className="w-1/5 h-min p-2 flex flex-col gap-2 items-center">
             <CardTitle className=" text-center py-2">Friends requests</CardTitle>
-            <Card className=" w-full aspect-square flex justify-center p-2 flex-col items-center gap-4">
-              <div className="flex items-center flex-col">
-                <img className=" h-16 rounded-full aspect-square object-cover" src="/pp.jpg" />
-                <h2 className=" font-thin">@frosteel</h2>
-              </div>
-              <Button>Follow</Button>
-            </Card>
-            <Card className=" w-full aspect-square flex justify-center p-2 flex-col items-center gap-4">
-              <div className="flex items-center flex-col">
-                <img className=" h-16 rounded-full aspect-square object-cover" src="/pp.jpg" />
-                <h2 className=" font-thin">@frosteel</h2>
-              </div>
-              <Button>Follow</Button>
-            </Card>
-            <Card className=" w-full aspect-square flex justify-center p-2 flex-col items-center gap-4">
-              <div className="flex items-center flex-col">
-                <img className=" h-16 rounded-full aspect-square object-cover" src="/pp.jpg" />
-                <h2 className=" font-thin">@frosteel</h2>
-              </div>
-              <Button>Follow</Button>
-            </Card>
-            <Card className=" w-full aspect-square flex justify-center p-2 flex-col items-center gap-4">
-              <div className="flex items-center flex-col">
-                <img className=" h-16 rounded-full aspect-square object-cover" src="/pp.jpg" />
-                <h2 className=" font-thin">@frosteel</h2>
-              </div>
-              <Button>Follow</Button>
-            </Card>
+            {allUser?.map((user: User) => (
+              user._id !== dataUser?._id ? (
+                <Card className=" w-full aspect-square flex justify-center p-2 flex-col items-center gap-4">
+                  <div className="flex items-center flex-col">
+                    <img className=" h-16 rounded-full aspect-square object-cover" src={user?.avatar} />
+                    <h2 className=" font-thin">@{user.username}</h2>
+                  </div>
+                  <Button onClick={(e) => handleRelation(e, user._id.toString())}>Follow</Button>
+                </Card>
+              ) : ''
+            ))}
           </Card>
         </div>
       </div>

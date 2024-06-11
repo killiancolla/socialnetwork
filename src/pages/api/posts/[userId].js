@@ -1,6 +1,7 @@
 import connectToDatabase from '../../../lib/mongoose';
 import Comment from '../../../models/Comment';
 import Post from '../../../models/Post';
+import Relation from '../../../models/Relation';
 import User from '../../../models/User';
 
 export default async function handler(req, res) {
@@ -15,16 +16,20 @@ export default async function handler(req, res) {
 
     try {
 
-        const posts = await Post.find({ userId: userId })
+        const friends = await Relation.find({ followerId: userId })
+        const followingIds = friends.map(follow => follow.followingId);
+        const allIds = [userId, ...followingIds]
+
+        const posts = await Post.find({ userId: { $in: allIds } })
             .populate({
                 path: 'comments',
                 options: { sort: { createdAt: -1 } },
                 populate: {
                     path: 'userId',
-                    select: 'username'
+                    select: 'username email avatar'
                 }
             })
-            .populate('userId', 'username email');
+            .populate('userId', 'username email avatar');
 
         if (!posts || posts.length === 0) {
             return res.status(404).json({ message: 'No posts found for this user' });

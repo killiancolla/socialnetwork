@@ -5,6 +5,7 @@ export interface Comment {
     userId: {
         _id: ObjectId;
         username: string;
+        avatar: string;
     };
     text: string;
     likes: {

@@ -7,6 +7,7 @@ export interface Post {
         _id: ObjectId;
         email: string;
         username: string;
+        avatar: string;
     };
     text: string;
     images?: string[];

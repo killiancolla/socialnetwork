@@ -26,7 +26,7 @@ export default async function handler(req, res) {
             { new: true }
         );
 
-        const populatedComment = await savedComment.populate('userId', 'username email');
+        const populatedComment = await savedComment.populate('userId', 'username email avatar');
 
         res.status(201).json(populatedComment);
     } catch (error) {

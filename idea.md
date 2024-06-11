@@ -1,1 +1,6 @@
-verifier souvent que le token est bien lié à un utilsiateur qui exsite encore
+- verifier souvent que le token est bien lié à un utilsiateur qui exsite encore sinon déconnecter
+- auto reload quand ajout ami
+- faire les likes
+- responsive
+- follow / followers
+- sécuriser firebase
