@@ -355,7 +355,7 @@ export default function Home() {
             <CardTitle className=" text-center py-2">Friends requests</CardTitle>
             {allUser?.map((user: User) => (
               user._id !== dataUser?._id ? (
-                <Card className=" w-full aspect-square flex justify-center p-2 flex-col items-center gap-4">
+                <Card key={user._id.toString()} className=" w-full aspect-square flex justify-center p-2 flex-col items-center gap-4">
                   <div className="flex items-center flex-col">
                     <img className=" h-16 rounded-full aspect-square object-cover" src={user?.avatar} />
                     <h2 className=" font-thin">@{user.username}</h2>
