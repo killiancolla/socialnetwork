@@ -5,21 +5,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import SparklesText from "@/components/ui/sparkles-text";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from 'next/navigation';
 import { useState } from "react";
 import { useAuth } from '../../lib/AuthContext';
 
 export default function Login() {
+    const { toast } = useToast()
 
     const [loginEmail, setLoginEmail] = useState('');
     const [loginPassword, setLoginPassword] = useState('');
     const [signinEmail, setSigninEmail] = useState('');
     const [signinPassword, setSigninPassword] = useState('');
     const [signinUsername, setSigninUsername] = useState('');
-    const [selectedTab, setSelectedTab] = useState('login')
+    const [selectedTab, setSelectedTab] = useState('login');
     const { login } = useAuth();
     const router = useRouter();
-
 
     const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -32,10 +33,19 @@ export default function Login() {
         });
 
         if (res.ok) {
+            toast({
+                title: "Connexion réussie.",
+                description: "Bienvenue !",
+            })
             const data = await res.json();
             login(data.token);
             router.push('/');
         } else {
+            toast({
+                variant: "destructive",
+                title: "Connexion échouée.",
+                description: "Identifiant ou mot de passe incorrect.",
+            })
             console.error('Error logging in');
         }
     };
@@ -51,12 +61,16 @@ export default function Login() {
         });
 
         if (res.ok) {
-            setSelectedTab('login')
-            setLoginEmail('')
-            setLoginPassword('')
-            setSigninEmail('')
-            setSigninPassword('')
-            setSigninUsername('')
+            toast({
+                title: "Inscription réussie.",
+                description: "Votre compte a bien été créé ! Connectez-vous pour accéder à l'application.",
+            })
+            setSelectedTab('login');
+            setLoginEmail('');
+            setLoginPassword('');
+            setSigninEmail('');
+            setSigninPassword('');
+            setSigninUsername('');
         } else {
             console.error(res);
         }
@@ -70,32 +84,32 @@ export default function Login() {
                     <TabsTrigger value="signin" onClick={() => setSelectedTab('signin')}>Sign In</TabsTrigger>
                 </TabsList>
                 <TabsContent className="max-sm:w-5/6 w-1/2" value="login">
-                    <form onSubmit={handleLogin} className="flex flex-col gap-1">
-                        <SparklesText text="Hello" className=" text-center" />
+                    <form onSubmit={handleLogin} className="flex flex-col gap-1" autoComplete="off">
+                        <SparklesText text="Hello" className="text-center" />
                         <h2 className="text-center text-2xl font-bold mb-6">Welcome Back</h2>
-                        <Label htmlFor="email">Email</Label>
-                        <Input type="email" id="email" placeholder="Email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} />
-                        <Label htmlFor="password">Password</Label>
-                        <Input type="password" id="password" placeholder="Password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} />
-                        <a className=" text-xs text-right mb-6">Forgot password ?</a>
+                        <Label htmlFor="login-email">Email</Label>
+                        <Input autoComplete="off" type="email" id="login-email" name="login-email" placeholder="Email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} />
+                        <Label htmlFor="login-password">Password</Label>
+                        <Input autoComplete="new-password" type="password" id="login-password" name="login-password" placeholder="Password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} />
+                        <a className="text-xs text-right mb-6">Forgot password ?</a>
                         <Button type="submit">Submit</Button>
                     </form>
                 </TabsContent>
                 <TabsContent className="max-sm:w-5/6 w-1/2" value="signin">
-                    <form onSubmit={handleRegister} className="flex flex-col gap-1">
-                        <SparklesText text="Welcome" className=" text-center" />
+                    <form onSubmit={handleRegister} className="flex flex-col gap-1" autoComplete="off">
+                        <SparklesText text="Welcome" className="text-center" />
                         <h2 className="text-center text-2xl font-bold mb-6">Join Us!</h2>
-                        <Label htmlFor="email">Email</Label>
-                        <Input type="email" id="email" placeholder="Email" value={signinEmail} onChange={(e) => setSigninEmail(e.target.value)} />
-                        <Label htmlFor="password">Password</Label>
-                        <Input type="password" id="password" placeholder="Password" value={signinPassword} onChange={(e) => setSigninPassword(e.target.value)} />
-                        <Label htmlFor="username">Username</Label>
-                        <Input className="mb-6" type="text" id="username" placeholder="Username" value={signinUsername} onChange={(e) => setSigninUsername(e.target.value)} />
+                        <Label htmlFor="signin-email">Email</Label>
+                        <Input autoComplete="off" type="email" id="signin-email" name="signin-email" placeholder="Email" value={signinEmail} onChange={(e) => setSigninEmail(e.target.value)} />
+                        <Label htmlFor="signin-password">Password</Label>
+                        <Input autoComplete="new-password" type="password" id="signin-password" name="signin-password" placeholder="Password" value={signinPassword} onChange={(e) => setSigninPassword(e.target.value)} />
+                        <Label htmlFor="signin-username">Username</Label>
+                        <Input autoComplete="off" className="mb-6" type="text" id="signin-username" name="signin-username" placeholder="Username" value={signinUsername} onChange={(e) => setSigninUsername(e.target.value)} />
                         <Button type="submit">Submit</Button>
                     </form>
                 </TabsContent>
             </Tabs>
             <div className="max-lg:hidden w-1/2 bg-red-200 h-full"></div>
         </section>
-    )
+    );
 }

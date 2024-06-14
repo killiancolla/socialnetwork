@@ -1,10 +1,11 @@
 import ClientWrapper from "@/components/ client-wrapper";
 import NavBar from "@/components/NavBar";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/toaster";
+import { AuthProvider } from "@/lib/AuthContext";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "@/lib/AuthContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -35,6 +36,7 @@ export default function RootLayout({
             </ClientWrapper>
           </ThemeProvider>
         </AuthProvider>
+        <Toaster />
       </body>
     </html>
   );

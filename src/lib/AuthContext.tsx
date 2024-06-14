@@ -1,8 +1,8 @@
 "use client"
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import Cookies from 'js-cookie';
-import { jwtDecode, JwtPayload } from "jwt-decode";
+import { JwtPayload, jwtDecode } from "jwt-decode";
+import React, { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 
 interface AuthContextType {
   isAuthenticated: boolean;

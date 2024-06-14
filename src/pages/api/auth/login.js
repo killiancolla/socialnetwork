@@ -1,5 +1,4 @@
 import bcrypt from 'bcryptjs';
-import cookie from 'cookie';
 import jwt from 'jsonwebtoken';
 import connectToDatabase from '../../../lib/mongoose';
 import User from '../../../models/User';

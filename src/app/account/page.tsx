@@ -99,7 +99,7 @@ export default function Account() {
 
     return (
         <section className="flex justify-center items-center flex-col mt-10">
-            <form onSubmit={handleUser} className="w-5/12 space-y-10">
+            <form autoComplete="off" onSubmit={handleUser} className="w-5/12 space-y-10">
                 <div className="flex flex-row gap-10">
                     {user && dataUser?._id.toString() && (
                         <>
@@ -121,8 +121,8 @@ export default function Account() {
                             <Input type="email" id="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
                         </div>
                         <div className="w-1/2">
-                            <Label htmlFor="username">Username</Label>
-                            <Input type="text" id="username" placeholder="Username" value={username} onChange={handleSetUsername} />
+                            <Label htmlFor="account-username">Username</Label>
+                            <Input autoComplete="off" type="text" id="account-username" name="account-username" placeholder="Username" value={username} onChange={handleSetUsername} />
                         </div>
                     </div>
                     <div className="flex justify-between gap-10">
@@ -138,11 +138,11 @@ export default function Account() {
                     <div className="flex justify-between gap-10">
                         <div className="w-1/2">
                             <Label htmlFor="newpass">New password</Label>
-                            <Input type="password" id="newpass" placeholder="New password" value={newpassword} onChange={(e) => setNewpassword(e.target.value)} />
+                            <Input autoComplete="new-password" type="password" id="newpass" placeholder="New password" value={newpassword} onChange={(e) => setNewpassword(e.target.value)} />
                         </div>
                         <div className="w-1/2">
                             <Label htmlFor="newpassconfirm">Confirm password</Label>
-                            <Input type="password" id="newpassconfirm" placeholder="Confirm password" value={confirmpassword} onChange={(e) => setConfirmpassword(e.target.value)} />
+                            <Input autoComplete="new-password" type="password" id="newpassconfirm" placeholder="Confirm password" value={confirmpassword} onChange={(e) => setConfirmpassword(e.target.value)} />
                         </div>
                     </div>
                 </div>

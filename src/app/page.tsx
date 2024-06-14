@@ -21,19 +21,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/AuthContext";
 import { Post } from "@/types/Post";
 import { User } from "@/types/User";
-import Image from "next/image";
+import { CirclePlus, MessageCircle, Share, ThumbsUp } from 'lucide-react';
 import { useEffect, useState } from "react";
-
-
 
 export default function Home() {
   const { user } = useAuth();
   const [dataUser, setDataUser] = useState<User | null>(null);
-  const [allUser, setAllUser] = useState<User[] | null>([])
+  const [userSuggestion, setUserSuggestion] = useState<User[] | null>([])
 
   const [postValue, setPostValue] = useState('');
   const [posts, setPosts] = useState<Post[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+  const [relationUpdated, setRelationUpdated] = useState(false);
+
+  const [followers, setFollowers] = useState([])
+  const [follow, setFollow] = useState([])
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -59,8 +61,10 @@ export default function Home() {
   }, [user]);
 
   useEffect(() => {
+    console.log(dataUser);
+
     const fetchAllUserData = async () => {
-      const res = await fetch(`/api/users/get`, {
+      const res = await fetch(`/api/users/suggestion?userId=${dataUser?._id}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -69,7 +73,9 @@ export default function Home() {
 
       if (res.ok) {
         const data = await res.json();
-        setAllUser(data);
+        setUserSuggestion(data.randomUsers)
+        setFollow(data.friends)
+        setFollowers(data.followers)
         console.log(data);
       } else {
         console.error('Error fetching user data');
@@ -77,7 +83,7 @@ export default function Home() {
     };
 
     fetchAllUserData();
-  }, []);
+  }, [dataUser, relationUpdated]);
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -108,7 +114,7 @@ export default function Home() {
     };
 
     fetchPosts();
-  }, [user]);
+  }, [user, relationUpdated]);
 
   const toggleComments = (postId: string) => {
     setPosts(posts.map(post =>
@@ -155,6 +161,7 @@ export default function Home() {
     if (res.ok) {
       const data = await res.json();
       console.log("Relation add");
+      setRelationUpdated(prev => !prev)
     } else {
       console.error('Error logging in');
     }
@@ -213,7 +220,7 @@ export default function Home() {
       <div className=" w-11/12 my-10 h-min flex flex-col items-center">
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="w-3/5">Add Post</Button>
+            <Button className=" rounded-full aspect-square h-14"><CirclePlus /></Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
@@ -232,19 +239,19 @@ export default function Home() {
         </Dialog>
         <div className="flex gap-3 p-2 relative w-full">
           {/* Left card */}
-          <Card className="w-1/5 h-min p-2 flex flex-col justify-center items-center gap-2 aspect-square">
+          <Card className=" max-sm:hidden w-1/5 h-min p-2 flex flex-col justify-center items-center gap-2 aspect-square">
             <div className="flex items-center flex-col gap-2">
               <img className=" h-16 rounded-full aspect-square object-cover" src={dataUser?.avatar} />
               <h2 className=" font-thin">@{dataUser?.username}</h2>
               <div className="flex gap-2">
-                <p className="flex flex-col items-center">5<span className=" text-xs">followers</span></p>
-                <p className="flex flex-col items-center">5 <span className="text-xs">follow</span></p>
+                <p className="flex flex-col items-center">{followers ? followers.length : 0} <span className=" text-xs">followers</span></p>
+                <p className="flex flex-col items-center">{follow ? follow.length : 0} <span className="text-xs">follow</span></p>
               </div>
             </div>
           </Card>
           {/* Middle card */}
-          <Card className=" z-10 w-3/5 h-full flex flex-col gap-2 p-2 overflow-auto">
-            <CardTitle className=" text-center py-2">Your friend's posts</CardTitle>
+          <div className="max-sm:w-full z-10 w-3/5 h-full flex flex-col gap-4 overflow-auto">
+            {/* <CardTitle className=" text-center py-2">Your friend's posts</CardTitle> */}
             {/* Card post */}
             <>
               {posts.length > 0 ? (
@@ -264,55 +271,31 @@ export default function Home() {
                       <div className="w-full flex justify-around border-t-2 py-3 mt-6">
                         <p className="flex items-center justify-center gap-2">
                           4
-                          <Image
-                            src="/like.svg"
-                            height={25}
-                            width={25}
-                            alt="like" />
+                          <ThumbsUp />
                         </p>
                         <p className="flex items-center justify-center gap-2">
                           {post.comments.length}
-                          <Image
-                            src="/comment.svg"
-                            height={25}
-                            width={25}
-                            alt="comment" />
+                          <MessageCircle />
                         </p>
                         <p className="flex items-center justify-center gap-2">
                           4
-                          <Image
-                            src="/share.svg"
-                            height={25}
-                            width={25}
-                            alt="share" />
+                          <Share />
                         </p>
                       </div>
                     </CardContent>
                     <CardFooter className="flex flex-col w-full p-0 border-t-2">
                       <div className="w-full flex justify-around px-0">
                         <div className=" hover:bg-slate-200 text-center w-1/3 p-3 flex items-center justify-center gap-2">
-                          <Image
-                            src="/like.svg"
-                            height={25}
-                            width={25}
-                            alt="like" />
-                          <p>Like</p>
+                          <ThumbsUp />
+                          <p className="max-sm:hidden">Like</p>
                         </div>
                         <div onClick={() => toggleComments(post._id.toString())} className=" hover:bg-slate-200 text-center w-1/3 p-3 flex items-center justify-center gap-2">
-                          <Image
-                            src="/comment.svg"
-                            height={25}
-                            width={25}
-                            alt="comment" />
-                          <p>Comment</p>
+                          <MessageCircle />
+                          <p className="max-sm:hidden">Comment</p>
                         </div>
                         <div className=" hover:bg-slate-200 text-center w-1/3 p-3 flex items-center justify-center gap-2">
-                          <Image
-                            src="/share.svg"
-                            height={25}
-                            width={25}
-                            alt="share" />
-                          <p>Share</p>
+                          <Share />
+                          <p className="max-sm:hidden">Share</p>
                         </div>
                       </div>
                       <div className={`w-full ${post.showComments ? '' : 'hidden'}`}>
@@ -345,15 +328,14 @@ export default function Home() {
                 ))
               ) : (
                 <>
-                  <h1>Loading...</h1>
+                  <h2>Nothing there. Add friends or posts your first message!</h2>
                 </>
               )}
             </>
-          </Card>
+          </div>
           {/* Right card */}
-          <Card className="w-1/5 h-min p-2 flex flex-col gap-2 items-center">
-            <CardTitle className=" text-center py-2">Friends requests</CardTitle>
-            {allUser?.map((user: User) => (
+          <div className=" max-sm:hidden w-1/5 h-min flex flex-col gap-2 items-center">
+            {userSuggestion && userSuggestion.length > 0 ? (userSuggestion?.map((user: User) => (
               user._id !== dataUser?._id ? (
                 <Card key={user._id.toString()} className=" w-full aspect-square flex justify-center p-2 flex-col items-center gap-4">
                   <div className="flex items-center flex-col">
@@ -363,8 +345,8 @@ export default function Home() {
                   <Button onClick={(e) => handleRelation(e, user._id.toString())}>Follow</Button>
                 </Card>
               ) : ''
-            ))}
-          </Card>
+            ))) : ''}
+          </div>
         </div>
       </div>
     </section >
