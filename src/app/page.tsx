@@ -18,10 +18,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/components/ui/use-toast";
 import { useAuth } from "@/lib/AuthContext";
 import { Post } from "@/types/Post";
 import { User } from "@/types/User";
-import { CirclePlus, MessageCircle, Share, ThumbsUp } from 'lucide-react';
+import Cookies from 'js-cookie';
+import { CirclePlus, MessageCircle, Share, ThumbsUp, Trash2 } from 'lucide-react';
 import { useEffect, useState } from "react";
 
 export default function Home() {
@@ -50,7 +52,6 @@ export default function Home() {
         if (res.ok) {
           const data = await res.json();
           setDataUser(data);
-          console.log(data);
         } else {
           console.error('Error fetching user data');
         }
@@ -61,7 +62,6 @@ export default function Home() {
   }, [user]);
 
   useEffect(() => {
-    console.log(dataUser);
 
     const fetchAllUserData = async () => {
       const res = await fetch(`/api/users/suggestion?userId=${dataUser?._id}`, {
@@ -76,13 +76,14 @@ export default function Home() {
         setUserSuggestion(data.randomUsers)
         setFollow(data.friends)
         setFollowers(data.followers)
-        console.log(data);
       } else {
         console.error('Error fetching user data');
       }
     };
 
-    fetchAllUserData();
+    if (dataUser?._id) {
+      fetchAllUserData();
+    }
   }, [dataUser, relationUpdated]);
 
   useEffect(() => {
@@ -104,9 +105,9 @@ export default function Home() {
           ...post,
           showComments: false,
           textComment: '',
+          likes: []
         }));
         const sortedPosts = postsWithComments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        console.log(sortedPosts);
         setPosts(sortedPosts);
       } else {
         console.error('Error fetching posts');
@@ -136,6 +137,7 @@ export default function Home() {
       const data: Post = await res.json();
       setPosts([data, ...posts]);
       setIsDialogOpen(false);
+      setPostValue('')
     } else {
       console.error('Error logging in');
     }
@@ -160,7 +162,6 @@ export default function Home() {
 
     if (res.ok) {
       const data = await res.json();
-      console.log("Relation add");
       setRelationUpdated(prev => !prev)
     } else {
       console.error('Error logging in');
@@ -195,6 +196,58 @@ export default function Home() {
     }
   }
 
+  const handleLikePost = async (e: React.MouseEvent<HTMLDivElement>, postId: string) => {
+    e.preventDefault();
+    const post = posts.find(post => post._id.toString() === postId);
+    if (!post) return;
+
+    const res = await fetch('/api/posts/like', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId: dataUser?._id,
+        postId: postId
+      }),
+    });
+
+    if (res.ok) {
+      const updatedPost = await res.json();
+      setPosts(posts.map(post =>
+        post._id.toString() === postId ? updatedPost : post
+      ));
+    } else {
+      console.error('Error submitting comment.')
+    }
+  }
+
+  const handlePostDelete = async (e: React.MouseEvent<SVGSVGElement>, postId: string) => {
+
+    e.preventDefault()
+    const post = posts.find(post => post._id.toString() === postId);
+    if (!post) return;
+    const res = await fetch('/api/posts/update', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${Cookies.get('token')}`
+      },
+      body: JSON.stringify({
+        postId: postId,
+        flag: false
+      })
+    })
+    if (res.ok) {
+      toast({
+        title: "Suppression réussie."
+      })
+      setPosts(prev => prev.filter(post => post._id.toString() !== postId))
+    } else {
+      console.error('Error deleting post.')
+    }
+  }
+
   function calculateHoursElapsed(timestamp: string): string {
     const pastDate = new Date(timestamp);
     const currentDate = new Date();
@@ -224,7 +277,7 @@ export default function Home() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Edit profile</DialogTitle>
+              <DialogTitle>Say something to your friends.</DialogTitle>
               <DialogDescription>
                 Add a post would be visible by all your followers.
               </DialogDescription>
@@ -256,8 +309,11 @@ export default function Home() {
             <>
               {posts.length > 0 ? (
                 posts.map((post) => (
-                  <Card className="pt-6" key={post._id.toString()}>
+                  <Card className="pt-6 relative" key={post._id.toString()}>
                     <CardTitle className="px-6">
+                      {post.userId._id == dataUser?._id ?
+                        <Trash2 onClick={(e) => handlePostDelete(e, post._id.toString())} className=" absolute right-10" />
+                        : ''}
                       <div className="flex items-center gap-3">
                         <img className=" h-8 rounded-full aspect-square object-cover" src={post.userId.avatar} />
                         <div>
@@ -270,7 +326,7 @@ export default function Home() {
                       <p className="p-0 font-thin mt-3">{post.text}</p>
                       <div className="w-full flex justify-around border-t-2 py-3 mt-6">
                         <p className="flex items-center justify-center gap-2">
-                          4
+                          {post.likes.length}
                           <ThumbsUp />
                         </p>
                         <p className="flex items-center justify-center gap-2">
@@ -285,7 +341,7 @@ export default function Home() {
                     </CardContent>
                     <CardFooter className="flex flex-col w-full p-0 border-t-2">
                       <div className="w-full flex justify-around px-0">
-                        <div className=" hover:bg-slate-200 text-center w-1/3 p-3 flex items-center justify-center gap-2">
+                        <div onClick={(e) => handleLikePost(e, post._id.toString())} className={`${dataUser && post.likes.includes(dataUser?._id) ? 'text-primary' : ''} hover:bg-slate-200 text-center w-1/3 p-3 flex items-center justify-center gap-2`} >
                           <ThumbsUp />
                           <p className="max-sm:hidden">Like</p>
                         </div>

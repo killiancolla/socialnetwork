@@ -12,8 +12,10 @@ export interface Post {
     text: string;
     images?: string[];
     comments: Comment[];
+    likes: ObjectId[];
     createdAt: string;
     updatedAt: string;
     showComments: boolean;
     textComment: string;
+    flag: boolean;
 }

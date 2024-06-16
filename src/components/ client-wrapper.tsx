@@ -12,7 +12,7 @@ const ClientWrapper = ({ children }: ClientWrapperProps) => {
     const isFullScreenPage = pathname === '/login';
 
     return (
-        <div className={isFullScreenPage ? "flex flex-col h-screen" : ""}>
+        <div className={isFullScreenPage ? "flex flex-col h-screen" : "min-h-screen"}>
             {children}
         </div>
     );

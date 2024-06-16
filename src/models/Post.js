@@ -5,6 +5,8 @@ const PostSchema = new mongoose.Schema({
     text: { type: String, required: true },
     images: [String],
     comments: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Comment' }],
+    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    flag: { type: Boolean, default: true, required: true }
 }, { timestamps: true });
 
 const Post = mongoose.models.Post || mongoose.model('Post', PostSchema);

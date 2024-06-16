@@ -20,7 +20,7 @@ export default async function handler(req, res) {
         const followingIds = friends.map(follow => follow.followingId);
         const allIds = [userId, ...followingIds]
 
-        const posts = await Post.find({ userId: { $in: allIds } })
+        const posts = await Post.find({ userId: { $in: allIds }, flag: true })
             .populate({
                 path: 'comments',
                 options: { sort: { createdAt: -1 } },
