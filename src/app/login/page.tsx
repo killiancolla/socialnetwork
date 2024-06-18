@@ -83,7 +83,7 @@ export default function Login() {
                     <TabsTrigger value="login" onClick={() => setSelectedTab('login')}>Log In</TabsTrigger>
                     <TabsTrigger value="signin" onClick={() => setSelectedTab('signin')}>Sign In</TabsTrigger>
                 </TabsList>
-                <TabsContent className="max-sm:w-5/6 w-1/2" value="login">
+                <TabsContent className="max-md:w-5/6 w-1/2" value="login">
                     <form onSubmit={handleLogin} className="flex flex-col gap-1" autoComplete="off">
                         <SparklesText text="Hello" className="text-center" />
                         <h2 className="text-center text-2xl font-bold mb-6">Welcome Back</h2>
@@ -95,7 +95,7 @@ export default function Login() {
                         <Button type="submit">Submit</Button>
                     </form>
                 </TabsContent>
-                <TabsContent className="max-sm:w-5/6 w-1/2" value="signin">
+                <TabsContent className="max-md:w-5/6 w-1/2" value="signin">
                     <form onSubmit={handleRegister} className="flex flex-col gap-1" autoComplete="off">
                         <SparklesText text="Welcome" className="text-center" />
                         <h2 className="text-center text-2xl font-bold mb-6">Join Us!</h2>

@@ -24,6 +24,7 @@ import { Post } from "@/types/Post";
 import { User } from "@/types/User";
 import Cookies from 'js-cookie';
 import { CirclePlus, MessageCircle, Share, ThumbsUp, Trash2 } from 'lucide-react';
+import { ObjectId } from "mongoose";
 import { useEffect, useState } from "react";
 
 export default function Home() {
@@ -36,9 +37,10 @@ export default function Home() {
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [relationUpdated, setRelationUpdated] = useState(false);
 
-  const [followers, setFollowers] = useState([])
-  const [follow, setFollow] = useState([])
+  const [followers, setFollowers] = useState<User[] | null>([])
+  const [follow, setFollow] = useState<User[] | null>([])
 
+  // Recuperation données utilisateur 
   useEffect(() => {
     const fetchUserData = async () => {
       if (user) {
@@ -61,6 +63,7 @@ export default function Home() {
     fetchUserData();
   }, [user]);
 
+  // Recuperation des follow, followers, posts
   useEffect(() => {
 
     const fetchAllUserData = async () => {
@@ -86,6 +89,7 @@ export default function Home() {
     }
   }, [dataUser, relationUpdated]);
 
+  // Recuperation des posts 
   useEffect(() => {
     const fetchPosts = async () => {
       if (!user) {
@@ -104,8 +108,7 @@ export default function Home() {
         const postsWithComments: Post[] = data.map(post => ({
           ...post,
           showComments: false,
-          textComment: '',
-          likes: []
+          textComment: ''
         }));
         const sortedPosts = postsWithComments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         setPosts(sortedPosts);
@@ -117,12 +120,14 @@ export default function Home() {
     fetchPosts();
   }, [user, relationUpdated]);
 
+  // Affichage section commentaire 
   const toggleComments = (postId: string) => {
     setPosts(posts.map(post =>
       post._id.toString() === postId ? { ...post, showComments: !post.showComments } : post
     ));
   };
 
+  // Créer post 
   const handlePost = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const res = await fetch('/api/posts/create', {
@@ -143,6 +148,7 @@ export default function Home() {
     }
   };
 
+  // Changement commentaire 
   const handleCommentChange = (e: React.ChangeEvent<HTMLInputElement>, postId: string) => {
     const { value } = e.target;
     setPosts(posts.map(post =>
@@ -150,6 +156,7 @@ export default function Home() {
     ));
   };
 
+  // Ajout ami
   const handleRelation = async (e: React.MouseEvent<HTMLButtonElement>, followingId: string) => {
     e.preventDefault();
     const res = await fetch('/api/relations/create', {
@@ -168,6 +175,7 @@ export default function Home() {
     }
   };
 
+  // Ajout commentaire 
   const handleCommentPost = async (e: React.FormEvent<HTMLFormElement>, postId: string) => {
     e.preventDefault();
     const post = posts.find(post => post._id.toString() === postId);
@@ -196,32 +204,72 @@ export default function Home() {
     }
   }
 
+  // Ajout like 
   const handleLikePost = async (e: React.MouseEvent<HTMLDivElement>, postId: string) => {
     e.preventDefault();
-    const post = posts.find(post => post._id.toString() === postId);
-    if (!post) return;
 
-    const res = await fetch('/api/posts/like', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        userId: dataUser?._id,
-        postId: postId
-      }),
-    });
+    if (!dataUser?._id) {
+      console.error('User ID is undefined');
+      return;
+    }
 
-    if (res.ok) {
+    const postIndex = posts.findIndex(post => post._id.toString() === postId);
+    if (postIndex === -1) return;
+
+    const post = posts[postIndex];
+
+
+
+    if (post.likes.includes(dataUser?._id)) {
+      setPosts(posts.map(post =>
+        post._id.toString() === postId ? {
+          ...post,
+          likes: post.likes.filter(userId => userId.toString() !== dataUser._id.toString())
+        } : post
+      ));
+    } else {
+      const updatedPosts = [...posts];
+      updatedPosts[postIndex] = {
+        ...post,
+        likes: [...post.likes, dataUser._id]
+      };
+      setPosts(updatedPosts);
+    }
+
+    try {
+      const res = await fetch('/api/posts/like', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: dataUser._id,
+          postId: postId
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to like post');
+      }
+
       const updatedPost = await res.json();
+
       setPosts(posts.map(post =>
         post._id.toString() === postId ? updatedPost : post
       ));
-    } else {
-      console.error('Error submitting comment.')
-    }
-  }
+    } catch (error) {
+      console.error('Error submitting like:', error);
 
+      setPosts(posts.map(post =>
+        post._id.toString() === postId ? {
+          ...post,
+          likes: post.likes.filter(userId => userId.toString() !== dataUser._id.toString())
+        } : post
+      ));
+    }
+  };
+
+  // Suppression post 
   const handlePostDelete = async (e: React.MouseEvent<SVGSVGElement>, postId: string) => {
 
     e.preventDefault()
@@ -243,6 +291,29 @@ export default function Home() {
         title: "Suppression réussie."
       })
       setPosts(prev => prev.filter(post => post._id.toString() !== postId))
+    } else {
+      console.error('Error deleting post.')
+    }
+  }
+
+  // Suppression commentaire 
+  const handleCommentDelete = async (e: React.MouseEvent<HTMLButtonElement>, followId: ObjectId) => {
+
+    e.preventDefault()
+    const res = await fetch('/api/relations/delete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId: dataUser?._id, followId: followId
+      })
+    })
+    if (res.ok) {
+      console.log('Unfollow sucessfully');
+      setFollow(prev => prev && prev.filter(follow => follow._id.toString() !== followId.toString()))
+      setRelationUpdated(prev => !prev)
+
     } else {
       console.error('Error deleting post.')
     }
@@ -275,7 +346,7 @@ export default function Home() {
           <DialogTrigger asChild>
             <Button className=" rounded-full aspect-square h-14"><CirclePlus /></Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="md:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Say something to your friends.</DialogTitle>
               <DialogDescription>
@@ -292,18 +363,43 @@ export default function Home() {
         </Dialog>
         <div className="flex gap-3 p-2 relative w-full">
           {/* Left card */}
-          <Card className=" max-sm:hidden w-1/5 h-min p-2 flex flex-col justify-center items-center gap-2 aspect-square">
+          <Card className=" max-md:hidden w-1/5 h-min p-2 flex flex-col justify-center items-center gap-2 aspect-square">
             <div className="flex items-center flex-col gap-2">
               <img className=" h-16 rounded-full aspect-square object-cover" src={dataUser?.avatar} />
               <h2 className=" font-thin">@{dataUser?.username}</h2>
               <div className="flex gap-2">
-                <p className="flex flex-col items-center">{followers ? followers.length : 0} <span className=" text-xs">followers</span></p>
-                <p className="flex flex-col items-center">{follow ? follow.length : 0} <span className="text-xs">follow</span></p>
+                <p className="flex flex-col items-center">{followers ? followers.length : 0} <span className="text-xs">followers</span></p>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <div>
+                      <p className="flex flex-col items-center">{follow ? follow.length : 0} <span className=" text-xs">follow</span></p>
+                    </div>
+                  </DialogTrigger>
+                  <DialogContent className="md:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>Your follows.</DialogTitle>
+                      <DialogDescription className="flex flex-col">
+                        {follow && follow.map((follow: User) => (
+                          <div key={follow._id.toString()} className=" h-20 flex items-center justify-between border-b-2 p-2">
+                            <div className="h-full flex items-center gap-2">
+                              <img className="h-full rounded-full aspect-square object-cover" src={follow?.avatar} />
+                              <span>@{follow?.username}</span>
+                            </div>
+                            <div className="group">
+                              <Button className="group-hover:hidden w-24" variant={"secondary"}>Follow</Button>
+                              <Button className="hidden group-hover:block w-24" variant={"secondary"} onClick={(e) => handleCommentDelete(e, follow?._id)}>Unfollow</Button>
+                            </div>
+                          </div>
+                        ))}
+                      </DialogDescription>
+                    </DialogHeader>
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
           </Card>
           {/* Middle card */}
-          <div className="max-sm:w-full z-10 w-3/5 h-full flex flex-col gap-4 overflow-auto">
+          <div className="max-md:w-full z-10 w-3/5 h-full flex flex-col gap-4 overflow-auto">
             {/* <CardTitle className=" text-center py-2">Your friend's posts</CardTitle> */}
             {/* Card post */}
             <>
@@ -341,17 +437,17 @@ export default function Home() {
                     </CardContent>
                     <CardFooter className="flex flex-col w-full p-0 border-t-2">
                       <div className="w-full flex justify-around px-0">
-                        <div onClick={(e) => handleLikePost(e, post._id.toString())} className={`${dataUser && post.likes.includes(dataUser?._id) ? 'text-primary' : ''} hover:bg-slate-200 text-center w-1/3 p-3 flex items-center justify-center gap-2`} >
+                        <div onClick={(e) => handleLikePost(e, post._id.toString())} className={`${dataUser && post.likes.includes(dataUser?._id) ? 'text-primary' : ''} hover:text-accent text-center w-1/3 p-3 flex items-center justify-center gap-2`} >
                           <ThumbsUp />
-                          <p className="max-sm:hidden">Like</p>
+                          <p className="max-md:hidden">Like</p>
                         </div>
-                        <div onClick={() => toggleComments(post._id.toString())} className=" hover:bg-slate-200 text-center w-1/3 p-3 flex items-center justify-center gap-2">
+                        <div onClick={() => toggleComments(post._id.toString())} className=" hover:text-accent text-center w-1/3 p-3 flex items-center justify-center gap-2">
                           <MessageCircle />
-                          <p className="max-sm:hidden">Comment</p>
+                          <p className="max-md:hidden">Comment</p>
                         </div>
-                        <div className=" hover:bg-slate-200 text-center w-1/3 p-3 flex items-center justify-center gap-2">
+                        <div className=" hover:text-accent text-center w-1/3 p-3 flex items-center justify-center gap-2">
                           <Share />
-                          <p className="max-sm:hidden">Share</p>
+                          <p className="max-md:hidden">Share</p>
                         </div>
                       </div>
                       <div className={`w-full ${post.showComments ? '' : 'hidden'}`}>
@@ -365,8 +461,8 @@ export default function Home() {
                           <Button className="w-1/6" type="submit">Send</Button>
                         </form>
                         <div>
-                          {post.comments.map((comment) => (
-                            <div className="p-6 border-b-2" key={comment._id.toString()}>
+                          {post.comments.map((comment, index) => (
+                            <div className={`p-6 ${index < post.comments.length - 1 ? 'border-b-2' : ''}`} key={comment._id.toString()}>
                               <div className="flex items-center gap-3">
                                 <img className=" h-8 rounded-full aspect-square object-cover" src={comment.userId.avatar} />
                                 <div>
@@ -390,7 +486,7 @@ export default function Home() {
             </>
           </div>
           {/* Right card */}
-          <div className=" max-sm:hidden w-1/5 h-min flex flex-col gap-2 items-center">
+          <div className=" max-md:hidden w-1/5 h-min flex flex-col gap-2 items-center">
             {userSuggestion && userSuggestion.length > 0 ? (userSuggestion?.map((user: User) => (
               user._id !== dataUser?._id ? (
                 <Card key={user._id.toString()} className=" w-full aspect-square flex justify-center p-2 flex-col items-center gap-4">
@@ -404,7 +500,7 @@ export default function Home() {
             ))) : ''}
           </div>
         </div>
-      </div>
+      </div >
     </section >
   );
 }
