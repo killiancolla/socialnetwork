@@ -4,9 +4,11 @@ import AvatarUpload from "@/components/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "@/components/ui/use-toast";
 import { useAuth } from "@/lib/AuthContext";
 import { User } from "@/types/User";
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { storage } from '../../../firebase';
 
@@ -20,8 +22,9 @@ export default function Account() {
     const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(null);
+    const router = useRouter();
 
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
     const [dataUser, setDataUser] = useState<User | null>(null);
 
     const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -55,7 +58,7 @@ export default function Account() {
 
     const handleSetUsername = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.value.length < 20)
-            setUsername(e.target.value.replace(/\s+/g, ''));
+            setUsername(e.target.value.replace(/\s+/g, '_'));
     };
 
     const handleFileSelect = (file: File | null) => {
@@ -92,6 +95,28 @@ export default function Account() {
             const data: User = await res.json();
             setDataUser(data);
             console.log('Updated successfully');
+        } else {
+            console.error('Error updating user');
+        }
+    };
+
+    const handleDeleteUser = async (e: React.FormEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+
+        const res = await fetch('/api/users/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ userId: dataUser?._id, flag: false })
+        });
+
+        if (res.ok) {
+            logout();
+            toast({
+                title: "Votre compte à bien été supprimé."
+            })
+            router.push('/login')
         } else {
             console.error('Error updating user');
         }
@@ -146,7 +171,10 @@ export default function Account() {
                         </div>
                     </div>
                 </div>
-                <Button type="submit">Submit</Button>
+                <div>
+                    <Button type="submit">Save</Button>
+                    <Button variant={"link"} className="ml-4" onClick={(e) => handleDeleteUser(e)}>Delete account</Button>
+                </div>
             </form>
         </section>
     );

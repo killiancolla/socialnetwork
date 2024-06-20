@@ -30,7 +30,7 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({ avatarUrl, onFileSelect }) 
             />
             <img
                 src={localAvatarUrl || avatarUrl}
-                className="w-40 rounded-full aspect-square object-cover cursor-pointer"
+                className="w-40 rounded-full aspect-square object-cover cursor-pointer hover:opacity-70"
                 onClick={() => fileInputRef.current?.click()}
             />
         </div>

@@ -23,7 +23,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { Post } from "@/types/Post";
 import { User } from "@/types/User";
 import Cookies from 'js-cookie';
-import { CirclePlus, MessageCircle, Share, ThumbsUp, Trash2 } from 'lucide-react';
+import { CirclePlus, MessageCircle, ThumbsUp, Trash2 } from 'lucide-react';
 import { ObjectId } from "mongoose";
 import { useEffect, useState } from "react";
 
@@ -296,8 +296,8 @@ export default function Home() {
     }
   }
 
-  // Suppression commentaire 
-  const handleCommentDelete = async (e: React.MouseEvent<HTMLButtonElement>, followId: ObjectId) => {
+  // Suppression relation 
+  const handleRelationDelete = async (e: React.MouseEvent<HTMLButtonElement>, followId: ObjectId) => {
 
     e.preventDefault()
     const res = await fetch('/api/relations/delete', {
@@ -316,6 +316,32 @@ export default function Home() {
 
     } else {
       console.error('Error deleting post.')
+    }
+  }
+
+  // Suppression commentaire
+  const handleCommentDelete = async (e: React.MouseEvent<SVGSVGElement>, postId: ObjectId, commentId: ObjectId) => {
+
+    e.preventDefault()
+    const res = await fetch('/api/comments/update', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${Cookies.get('token')}`
+      },
+      body: JSON.stringify({
+        commentId: commentId, flag: false
+      })
+    })
+    if (res.ok) {
+      console.log('Comment sucessfully delete');
+      setPosts(posts.map(post =>
+        post._id.toString() === postId.toString()
+          ? { ...post, comments: post.comments.filter(comment => comment._id.toString() !== commentId.toString()) }
+          : post
+      ));
+    } else {
+      console.error('Error deleting comment.')
     }
   }
 
@@ -368,16 +394,37 @@ export default function Home() {
               <img className=" h-16 rounded-full aspect-square object-cover" src={dataUser?.avatar} />
               <h2 className=" font-thin">@{dataUser?.username}</h2>
               <div className="flex gap-2">
-                <p className="flex flex-col items-center">{followers ? followers.length : 0} <span className="text-xs">followers</span></p>
                 <Dialog>
                   <DialogTrigger asChild>
                     <div>
-                      <p className="flex flex-col items-center">{follow ? follow.length : 0} <span className=" text-xs">follow</span></p>
+                      <p className="flex flex-col items-center hover:text-slate-500">{followers ? followers.length : 0} <span className="text-xs">followers</span></p>
                     </div>
                   </DialogTrigger>
                   <DialogContent className="md:max-w-[425px]">
                     <DialogHeader>
-                      <DialogTitle>Your follows.</DialogTitle>
+                      <DialogTitle>Your followers</DialogTitle>
+                      <DialogDescription className="flex flex-col">
+                        {followers && followers.map((follower: User) => (
+                          <div key={follower._id.toString()} className=" h-20 flex items-center justify-between border-b-2 p-2">
+                            <div className="h-full flex items-center gap-2">
+                              <img className="h-full rounded-full aspect-square object-cover" src={follower?.avatar} />
+                              <span>@{follower?.username}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </DialogDescription>
+                    </DialogHeader>
+                  </DialogContent>
+                </Dialog>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <div>
+                      <p className="flex flex-col items-center hover:text-slate-500">{follow ? follow.length : 0} <span className=" text-xs">follow</span></p>
+                    </div>
+                  </DialogTrigger>
+                  <DialogContent className="md:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>Your follows</DialogTitle>
                       <DialogDescription className="flex flex-col">
                         {follow && follow.map((follow: User) => (
                           <div key={follow._id.toString()} className=" h-20 flex items-center justify-between border-b-2 p-2">
@@ -387,7 +434,7 @@ export default function Home() {
                             </div>
                             <div className="group">
                               <Button className="group-hover:hidden w-24" variant={"secondary"}>Follow</Button>
-                              <Button className="hidden group-hover:block w-24" variant={"secondary"} onClick={(e) => handleCommentDelete(e, follow?._id)}>Unfollow</Button>
+                              <Button className="hidden group-hover:block w-24" variant={"secondary"} onClick={(e) => handleRelationDelete(e, follow?._id)}>Unfollow</Button>
                             </div>
                           </div>
                         ))}
@@ -429,10 +476,6 @@ export default function Home() {
                           {post.comments.length}
                           <MessageCircle />
                         </p>
-                        <p className="flex items-center justify-center gap-2">
-                          4
-                          <Share />
-                        </p>
                       </div>
                     </CardContent>
                     <CardFooter className="flex flex-col w-full p-0 border-t-2">
@@ -445,10 +488,10 @@ export default function Home() {
                           <MessageCircle />
                           <p className="max-md:hidden">Comment</p>
                         </div>
-                        <div className=" hover:text-accent text-center w-1/3 p-3 flex items-center justify-center gap-2">
+                        {/* <div className=" hover:text-accent text-center w-1/3 p-3 flex items-center justify-center gap-2">
                           <Share />
                           <p className="max-md:hidden">Share</p>
-                        </div>
+                        </div> */}
                       </div>
                       <div className={`w-full ${post.showComments ? '' : 'hidden'}`}>
                         <form className="flex p-2 gap-2" onSubmit={(e) => handleCommentPost(e, post._id.toString())}>
@@ -461,8 +504,11 @@ export default function Home() {
                           <Button className="w-1/6" type="submit">Send</Button>
                         </form>
                         <div>
-                          {post.comments.map((comment, index) => (
+                          {post.comments.filter((comment) => comment.flag = true).map((comment, index) => (
                             <div className={`p-6 ${index < post.comments.length - 1 ? 'border-b-2' : ''}`} key={comment._id.toString()}>
+                              {comment.userId._id == dataUser?._id ?
+                                <Trash2 onClick={(e) => handleCommentDelete(e, post._id, comment._id)} className=" absolute right-10" />
+                                : ''}
                               <div className="flex items-center gap-3">
                                 <img className=" h-8 rounded-full aspect-square object-cover" src={comment.userId.avatar} />
                                 <div>

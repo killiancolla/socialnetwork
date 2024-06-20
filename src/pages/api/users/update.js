@@ -6,14 +6,14 @@ export default async function handler(req, res) {
         return res.status(405).json({ message: 'Method not allowed' });
     }
 
-    const { userId, username, email, name, surname, avatarUrl } = req.body;
+    const { userId, username, email, name, surname, avatarUrl, flag } = req.body;
 
     await connectToDatabase();
 
     try {
         const updateuseer = await User.findByIdAndUpdate(
             userId,
-            { username: username, email: email, name: name, surname: surname, avatar: avatarUrl },
+            { username: username, email: email, name: name, surname: surname, avatar: avatarUrl, flag: flag },
             { new: true }
         );
         res.status(200).json(updateuseer);

@@ -15,10 +15,15 @@ export default async function handler(req, res) {
         return res.status(400).json({ message: 'Email, password and username are required' });
     }
 
-    const existingUser = await User.findOne({ email });
+    const existingEmail = await User.findOne({ email });
+    const existingUsername = await User.findOne({ username });
 
-    if (existingUser) {
-        return res.status(400).json({ message: 'User already exists' });
+    if (existingEmail) {
+        return res.status(400).json({ message: 'Email already exists' });
+    }
+
+    if (existingUsername) {
+        return res.status(400).json({ message: 'Username already exists' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);

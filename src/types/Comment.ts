@@ -14,4 +14,5 @@ export interface Comment {
     }[];
     createdAt: string;
     updatedAt: string;
+    flag: boolean;
 }

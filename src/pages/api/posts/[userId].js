@@ -20,16 +20,27 @@ export default async function handler(req, res) {
         const followingIds = friends.map(follow => follow.followingId);
         const allIds = [userId, ...followingIds]
 
-        const posts = await Post.find({ userId: { $in: allIds }, flag: true })
+        const posts_ = await Post.find({ userId: { $in: allIds }, flag: true })
             .populate({
                 path: 'comments',
+                match: { flag: true },
                 options: { sort: { createdAt: -1 } },
                 populate: {
                     path: 'userId',
+                    match: { flag: true },
                     select: 'username email avatar'
                 }
             })
-            .populate('userId', 'username email avatar');
+            .populate({
+                path: 'userId',
+                match: { flag: true },
+                select: 'username email avatar'
+            });
+
+        const posts = posts_.filter(post => post.userId !== null).map(post => {
+            const filteredComments = post.comments.filter(comment => comment && comment.userId);
+            return { ...post.toObject(), comments: filteredComments };
+        });
 
         if (!posts || posts.length === 0) {
             return res.status(404).json({ message: 'No posts found for this user' });

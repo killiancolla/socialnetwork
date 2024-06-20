@@ -35,16 +35,24 @@ export default async function handler(req, res) {
             await post.save()
         }
 
-        const populatedPost = await Post.findById(post._id)
+        const populatedPost_ = await Post.findById(post._id)
             .populate({
                 path: 'comments',
+                match: { flag: true },
                 options: { sort: { createdAt: -1 } },
                 populate: {
                     path: 'userId',
+                    match: { flag: true },
                     select: 'username email avatar'
                 }
             })
             .populate('userId', 'username email avatar');
+
+        var populatedPost = {}
+        if (populatedPost_) {
+            const filteredComments = populatedPost_.comments.filter(comment => comment && comment.userId);
+            populatedPost = { ...populatedPost_.toObject(), comments: filteredComments };
+        }
 
         res.status(201).json(populatedPost);
     } catch (error) {

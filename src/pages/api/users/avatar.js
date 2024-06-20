@@ -31,6 +31,7 @@ apiRoute.post(async (req, res) => {
 
         const updatedUser = await User.findByIdAndUpdate(
             userId,
+            { match: { flag: true } },
             { avatar: avatarPath },
             { new: true }
         );

@@ -72,8 +72,17 @@ export default function Login() {
             setSigninPassword('');
             setSigninUsername('');
         } else {
-            console.error(res);
+            const data = await res.json();
+            toast({
+                variant: 'destructive',
+                title: data.message,
+            })
         }
+    };
+
+    const handleSetUsername = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.value.length < 20)
+            setSigninUsername(e.target.value.replace(/\s+/g, '_'));
     };
 
     return (
@@ -104,7 +113,7 @@ export default function Login() {
                         <Label htmlFor="signin-password">Password</Label>
                         <Input autoComplete="new-password" type="password" id="signin-password" name="signin-password" placeholder="Password" value={signinPassword} onChange={(e) => setSigninPassword(e.target.value)} />
                         <Label htmlFor="signin-username">Username</Label>
-                        <Input autoComplete="off" className="mb-6" type="text" id="signin-username" name="signin-username" placeholder="Username" value={signinUsername} onChange={(e) => setSigninUsername(e.target.value)} />
+                        <Input autoComplete="off" className="mb-6" type="text" id="signin-username" name="signin-username" placeholder="Username" value={signinUsername} onChange={(e) => handleSetUsername(e)} />
                         <Button type="submit">Submit</Button>
                     </form>
                 </TabsContent>

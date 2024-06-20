@@ -109,10 +109,7 @@ export default function NavBar() {
                 </a>
                 {isAuthenticated ? (
                     <>
-                        <div className="space-x-4">
-                            <a className=" hover:bg-slate-200 p-2 rounded-sm" href="/">Home</a>
-                            <a className=" hover:bg-slate-200 p-2 rounded-sm" href="/friends">Friends list</a>
-                        </div>
+                        <></>
                         <Input className="text-input w-1/3 bg-card-foreground border-0" placeholder="Search friend" />
                     </>
                 ) : ''}
