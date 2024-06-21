@@ -83,17 +83,28 @@ export default function Account() {
             setAvatarUrl(uploadedAvatarUrl);
         }
 
+        if (newpassword != '' && newpassword != confirmpassword) {
+            toast({
+                variant: 'destructive',
+                title: "Vos mots de passe ne correspondent pas."
+            })
+            return;
+        }
+
         const res = await fetch('/api/users/update', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ userId: dataUser?._id, username: username, email: email, name: name, surname: surname, avatarUrl: uploadedAvatarUrl }),
+            body: JSON.stringify({ userId: dataUser?._id, username: username, email: email, name: name, surname: surname, avatarUrl: uploadedAvatarUrl, password: newpassword }),
         });
 
         if (res.ok) {
             const data: User = await res.json();
             setDataUser(data);
+            toast({
+                title: "Votre compte a bien été mis à jour."
+            })
             console.log('Updated successfully');
         } else {
             console.error('Error updating user');
