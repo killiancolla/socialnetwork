@@ -13,8 +13,8 @@ import Image from "next/image";
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from "react";
 import ModeToggle from "./ModeToggle";
+import SearchBar from "./searchBar";
 import { Button } from "./ui/button";
-import { Input } from "./ui/input";
 
 export default function NavBar() {
 
@@ -110,7 +110,8 @@ export default function NavBar() {
                 {isAuthenticated ? (
                     <>
                         <></>
-                        <Input className="text-input w-1/3 bg-card-foreground border-0" placeholder="Search friend" />
+                        <SearchBar />
+                        {/* <Input className="text-input w-1/3 bg-card-foreground border-0" placeholder="Search friend" /> */}
                     </>
                 ) : ''}
                 <div className="flex items-center space-x-4">

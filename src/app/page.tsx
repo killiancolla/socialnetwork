@@ -20,6 +20,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
 import { useAuth } from "@/lib/AuthContext";
+import { usePostContext } from "@/lib/PostContext";
+import { useUserContext } from "@/lib/UserContext";
 import { Post } from "@/types/Post";
 import { User } from "@/types/User";
 import Cookies from 'js-cookie';
@@ -29,16 +31,14 @@ import { useEffect, useState } from "react";
 
 export default function Home() {
   const { user } = useAuth();
+  const { posts, setPosts, fetchPosts } = usePostContext();
+  const { followers, follow, userSuggestion, fetchDatas, followUser, unfollowUser } = useUserContext();
+
   const [dataUser, setDataUser] = useState<User | null>(null);
-  const [userSuggestion, setUserSuggestion] = useState<User[] | null>([])
 
   const [postValue, setPostValue] = useState('');
-  const [posts, setPosts] = useState<Post[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [relationUpdated, setRelationUpdated] = useState(false);
-
-  const [followers, setFollowers] = useState<User[] | null>([])
-  const [follow, setFollow] = useState<User[] | null>([])
 
   // Recuperation données utilisateur 
   useEffect(() => {
@@ -63,61 +63,18 @@ export default function Home() {
     fetchUserData();
   }, [user]);
 
-  // Recuperation des follow, followers, posts
   useEffect(() => {
-
-    const fetchAllUserData = async () => {
-      const res = await fetch(`/api/users/suggestion?userId=${dataUser?._id}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setUserSuggestion(data.randomUsers)
-        setFollow(data.friends)
-        setFollowers(data.followers)
-      } else {
-        console.error('Error fetching user data');
-      }
-    };
-
-    if (dataUser?._id) {
-      fetchAllUserData();
+    if (user) {
+      fetchDatas(user?.userId);
     }
-  }, [dataUser, relationUpdated]);
+  }, [relationUpdated, user])
 
   // Recuperation des posts 
   useEffect(() => {
-    const fetchPosts = async () => {
-      if (!user) {
-        return;
-      }
+    if (user) {
+      fetchPosts(user?.userId);
+    }
 
-      const res = await fetch(`/api/posts/${user.userId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (res.ok) {
-        const data: Post[] = await res.json();
-        const postsWithComments: Post[] = data.map(post => ({
-          ...post,
-          showComments: false,
-          textComment: ''
-        }));
-        const sortedPosts = postsWithComments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        setPosts(sortedPosts);
-      } else {
-        console.error('Error fetching posts');
-      }
-    };
-
-    fetchPosts();
   }, [user, relationUpdated]);
 
   // Affichage section commentaire 
@@ -157,22 +114,10 @@ export default function Home() {
   };
 
   // Ajout ami
-  const handleRelation = async (e: React.MouseEvent<HTMLButtonElement>, followingId: string) => {
+  const handleRelation = async (e: React.MouseEvent<HTMLButtonElement>, followingId: ObjectId) => {
     e.preventDefault();
-    const res = await fetch('/api/relations/create', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ followerId: dataUser?._id, followingId: followingId }),
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      setRelationUpdated(prev => !prev)
-    } else {
-      console.error('Error logging in');
-    }
+    followUser(user?.userId, followingId);
+    setRelationUpdated(prev => !prev)
   };
 
   // Ajout commentaire 
@@ -290,7 +235,7 @@ export default function Home() {
       toast({
         title: "Suppression réussie."
       })
-      setPosts(prev => prev.filter(post => post._id.toString() !== postId))
+      setPosts(posts.filter(post => post._id.toString() !== postId))
     } else {
       console.error('Error deleting post.')
     }
@@ -300,23 +245,8 @@ export default function Home() {
   const handleRelationDelete = async (e: React.MouseEvent<HTMLButtonElement>, followId: ObjectId) => {
 
     e.preventDefault()
-    const res = await fetch('/api/relations/delete', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        userId: dataUser?._id, followId: followId
-      })
-    })
-    if (res.ok) {
-      console.log('Unfollow sucessfully');
-      setFollow(prev => prev && prev.filter(follow => follow._id.toString() !== followId.toString()))
-      setRelationUpdated(prev => !prev)
-
-    } else {
-      console.error('Error deleting post.')
-    }
+    unfollowUser(user?.userId, followId);
+    setRelationUpdated(prev => !prev)
   }
 
   // Suppression commentaire
@@ -540,7 +470,7 @@ export default function Home() {
                     <img className=" h-16 rounded-full aspect-square object-cover" src={user?.avatar} />
                     <h2 className=" font-thin">@{user.username}</h2>
                   </div>
-                  <Button onClick={(e) => handleRelation(e, user._id.toString())}>Follow</Button>
+                  <Button onClick={(e) => handleRelation(e, user._id)}>Follow</Button>
                 </Card>
               ) : ''
             ))) : ''}
