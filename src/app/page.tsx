@@ -1,10 +1,12 @@
 "use client";
 
+import Loading from "@/components/loading";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardFooter,
+  CardHeader,
   CardTitle
 } from "@/components/ui/card";
 import {
@@ -14,7 +16,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogTrigger
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,8 +27,9 @@ import { useUserContext } from "@/lib/UserContext";
 import { Post } from "@/types/Post";
 import { User } from "@/types/User";
 import Cookies from 'js-cookie';
-import { CirclePlus, MessageCircle, ThumbsUp, Trash2 } from 'lucide-react';
+import { MessageCircle, Plus, ThumbsUp, Trash2 } from 'lucide-react';
 import { ObjectId } from "mongoose";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 export default function Home() {
@@ -40,41 +43,57 @@ export default function Home() {
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [relationUpdated, setRelationUpdated] = useState(false);
 
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const [isLoadingPost, setIsLoadingPost] = useState(true);
+  const [isLoadingFriends, setIsLoadingFriends] = useState(true);
+
+
   // Recuperation données utilisateur 
   useEffect(() => {
     const fetchUserData = async () => {
-      if (user) {
+      try {
         const res = await fetch(`/api/users/${user.userId}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
           },
         });
-
-        if (res.ok) {
-          const data = await res.json();
-          setDataUser(data);
-        } else {
-          console.error('Error fetching user data');
-        }
+        const data = await res.json();
+        setDataUser(data);
+        setIsLoadingUser(false);
+      } catch (error) {
+        console.error(error);
       }
     };
 
-    fetchUserData();
+    if (user) {
+      fetchUserData();
+    }
   }, [user]);
 
   useEffect(() => {
     if (user) {
-      fetchDatas(user?.userId);
+      try {
+        fetchDatas(user?.userId).then(() => {
+          setIsLoadingFriends(false)
+        });
+      } catch (error) {
+        console.error(error);
+      }
     }
   }, [relationUpdated, user])
 
   // Recuperation des posts 
   useEffect(() => {
     if (user) {
-      fetchPosts(user?.userId);
+      try {
+        fetchPosts(user?.userId).then(() => {
+          setIsLoadingPost(false);
+        });
+      } catch (error) {
+        console.error(error);
+      }
     }
-
   }, [user, relationUpdated]);
 
   // Affichage section commentaire 
@@ -85,7 +104,7 @@ export default function Home() {
   };
 
   // Créer post 
-  const handlePost = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handlePost = async (e: React.FormEvent<HTMLButtonElement>) => {
     e.preventDefault();
     const res = await fetch('/api/posts/create', {
       method: 'POST',
@@ -264,7 +283,6 @@ export default function Home() {
       })
     })
     if (res.ok) {
-      console.log('Comment sucessfully delete');
       setPosts(posts.map(post =>
         post._id.toString() === postId.toString()
           ? { ...post, comments: post.comments.filter(comment => comment._id.toString() !== commentId.toString()) }
@@ -294,89 +312,131 @@ export default function Home() {
     }
   }
 
+  if (isLoadingFriends || isLoadingPost || isLoadingUser) {
+    return (
+      <Loading />
+    )
+  }
+
   return (
     <section className="h-min flex justify-center">
       {/* Main card */}
       <div className=" w-11/12 my-10 h-min flex flex-col items-center">
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen} defaultOpen>
           <DialogTrigger asChild>
-            <Button className=" rounded-full aspect-square h-14"><CirclePlus /></Button>
+            <Button variant="outline"><Plus className="mr-2" />Add Post</Button>
           </DialogTrigger>
-          <DialogContent className="md:max-w-[425px]">
+          <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Say something to your friends.</DialogTitle>
-              <DialogDescription>
-                Add a post would be visible by all your followers.
-              </DialogDescription>
+              <DialogTitle>Add New Post</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handlePost}>
-              <Textarea value={postValue} onChange={(e) => setPostValue(e.target.value)} className="w-full" placeholder="Your message here." />
-              <DialogFooter>
-                <Button type="submit">Add</Button>
-              </DialogFooter>
-            </form>
+            <div className="grid gap-4 py-4">
+              <Textarea
+                placeholder="What's on your mind?"
+                className="resize-none"
+                value={postValue}
+                onChange={(e) => setPostValue(e.target.value)}
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handlePost}>Post</Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
-        <div className="flex gap-3 p-2 relative w-full">
+        <div className="max-md:flex-col flex gap-4 p-2 w-full relative">
           {/* Left card */}
-          <Card className=" max-md:hidden w-1/5 h-min p-2 flex flex-col justify-center items-center gap-2 aspect-square">
-            <div className="flex items-center flex-col gap-2">
-              <img className=" h-16 rounded-full aspect-square object-cover" src={dataUser?.avatar} />
-              <h2 className=" font-thin">@{dataUser?.username}</h2>
-              <div className="flex gap-2">
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <div>
-                      <p className="flex flex-col items-center hover:text-slate-500">{followers ? followers.length : 0} <span className="text-xs">followers</span></p>
-                    </div>
-                  </DialogTrigger>
-                  <DialogContent className="md:max-w-[425px]">
-                    <DialogHeader>
-                      <DialogTitle>Your followers</DialogTitle>
-                      <DialogDescription className="flex flex-col">
-                        {followers && followers.map((follower: User) => (
-                          <div key={follower._id.toString()} className=" h-20 flex items-center justify-between border-b-2 p-2">
-                            <div className="h-full flex items-center gap-2">
-                              <img className="h-full rounded-full aspect-square object-cover" src={follower?.avatar} />
-                              <span>@{follower?.username}</span>
+          <div className="max-md:w-full w-1/3 h-min flex flex-col gap-4">
+            <Card className=" p-10 flex flex-col justify-center items-center gap-2 md:aspect-square">
+              <div className="flex items-center flex-col">
+                <Image
+                  height={1000}
+                  width={1000}
+                  alt="logo"
+                  priority={true}
+                  className=" rounded-full object-cover aspect-square w-3/5"
+                  src={dataUser?.avatar ?? ""}
+                />
+                <h2 className="mt-2 font-medium">{dataUser?.name} {dataUser?.surname}</h2>
+                <h2 className=" font-thin">@{dataUser?.username}</h2>
+                <div className="flex gap-10 mt-6">
+                  <Dialog modal={!(followers.length == 0)}>
+                    <DialogTrigger asChild>
+                      <div>
+                        <p className={`flex flex-col items-center ${followers.length == 0 ? '' : 'hover:text-slate-500'}`}><span className=" text-2xl font-bold">{followers ? followers.length : 0}</span><span className="font-thin">Followers</span></p>
+                      </div>
+                    </DialogTrigger>
+                    <DialogContent className={`md:max-w-[425px] ${followers.length == 0 ? 'hidden' : ''}`}>
+                      <DialogHeader>
+                        <DialogTitle>Your followers</DialogTitle>
+                        <DialogDescription className="flex flex-col">
+                          {followers && followers.map((follower: User) => (
+                            <div key={follower._id.toString()} className=" h-20 flex items-center justify-between border-b-2 p-2">
+                              <div className="h-full flex items-center gap-2">
+                                <Image alt="logo" height={40} width={40} className=" rounded-full aspect-square object-cover" src={follower?.avatar} />
+                                <span>@{follower?.username}</span>
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </DialogDescription>
-                    </DialogHeader>
-                  </DialogContent>
-                </Dialog>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <div>
-                      <p className="flex flex-col items-center hover:text-slate-500">{follow ? follow.length : 0} <span className=" text-xs">follow</span></p>
-                    </div>
-                  </DialogTrigger>
-                  <DialogContent className="md:max-w-[425px]">
-                    <DialogHeader>
-                      <DialogTitle>Your follows</DialogTitle>
-                      <DialogDescription className="flex flex-col">
-                        {follow && follow.map((follow: User) => (
-                          <div key={follow._id.toString()} className=" h-20 flex items-center justify-between border-b-2 p-2">
-                            <div className="h-full flex items-center gap-2">
-                              <img className="h-full rounded-full aspect-square object-cover" src={follow?.avatar} />
-                              <span>@{follow?.username}</span>
+                          ))}
+                        </DialogDescription>
+                      </DialogHeader>
+                    </DialogContent>
+                  </Dialog>
+                  <Dialog modal={!(follow.length == 0)}>
+                    <DialogTrigger asChild>
+                      <div>
+                        <p className={`flex flex-col items-center ${follow.length == 0 ? '' : 'hover:text-slate-500'}`}><span className=" text-2xl font-bold">{follow ? follow.length : 0}</span><span className="font-thin">Follow</span></p>
+                      </div>
+                    </DialogTrigger>
+                    <DialogContent className={`md:max-w-[425px] ${follow.length == 0 ? 'hidden' : ''}`}>
+                      <DialogHeader>
+                        <DialogTitle>Your follows</DialogTitle>
+                        <DialogDescription className="flex flex-col">
+                          {follow && follow.map((follow: User) => (
+                            <div key={follow._id.toString()} className=" h-20 flex items-center justify-between border-b-2 p-2">
+                              <div className="h-full flex items-center gap-2">
+                                <Image height={40} width={40} alt="logo" className="rounded-full aspect-square object-cover" src={follow?.avatar} />
+                                <span>@{follow?.username}</span>
+                              </div>
+                              <div className="group">
+                                <Button className="group-hover:hidden w-24" variant={"secondary"}>Follow</Button>
+                                <Button className="hidden group-hover:block w-24" variant={"secondary"} onClick={(e) => handleRelationDelete(e, follow?._id)}>Unfollow</Button>
+                              </div>
                             </div>
-                            <div className="group">
-                              <Button className="group-hover:hidden w-24" variant={"secondary"}>Follow</Button>
-                              <Button className="hidden group-hover:block w-24" variant={"secondary"} onClick={(e) => handleRelationDelete(e, follow?._id)}>Unfollow</Button>
-                            </div>
-                          </div>
-                        ))}
-                      </DialogDescription>
-                    </DialogHeader>
-                  </DialogContent>
-                </Dialog>
+                          ))}
+                        </DialogDescription>
+                      </DialogHeader>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </div>
-            </div>
-          </Card>
+            </Card>
+            {userSuggestion.length > 0 && (
+              <Card className=" pb-6 max-md:hidden w-full h-min flex flex-col gap-2 items-center">
+                <CardHeader className="flex items-center justify-between">
+                  <div className="text-lg font-bold">Friend Suggestions</div>
+                </CardHeader>
+                {userSuggestion && userSuggestion.length > 0 ? (userSuggestion?.map((user: User) => (
+                  user._id !== dataUser?._id ? (
+                    <div key={user._id.toString()} className=" w-full flex px-8 flex-row items-center justify-between gap-4">
+                      <div className="flex items-center flex-row gap-4">
+                        <Image height={50} width={50} alt="logo" className="rounded-full aspect-square object-cover" src={user?.avatar} />
+                        <div>
+                          <h2 className=" font-thin">@{user.username}</h2>
+                          <p className="font-thin text-xs">{calculateHoursElapsed(user.createdAt)}</p>
+                        </div>
+                      </div>
+                      <Button onClick={(e) => handleRelation(e, user._id)}>Follow</Button>
+                    </div>
+                  ) : ''
+                ))) : ''}
+              </Card>
+            )}
+          </div>
           {/* Middle card */}
-          <div className="max-md:w-full z-10 w-3/5 h-full flex flex-col gap-4 overflow-auto">
+          <div className="max-md:w-full z-10 w-2/3 h-full flex flex-col gap-4 overflow-auto">
             {/* <CardTitle className=" text-center py-2">Your friend's posts</CardTitle> */}
             {/* Card post */}
             <>
@@ -388,7 +448,7 @@ export default function Home() {
                         <Trash2 onClick={(e) => handlePostDelete(e, post._id.toString())} className=" absolute right-10" />
                         : ''}
                       <div className="flex items-center gap-3">
-                        <img className=" h-8 rounded-full aspect-square object-cover" src={post.userId.avatar} />
+                        <Image height={100} width={100} alt="logo" className=" h-12 w-12 rounded-full object-cover" src={post.userId.avatar} />
                         <div>
                           <p className=" text-sm">@{post.userId.username}</p>
                           <p className="text-sm font-thin">{calculateHoursElapsed(post.createdAt)}</p>
@@ -440,7 +500,7 @@ export default function Home() {
                                 <Trash2 onClick={(e) => handleCommentDelete(e, post._id, comment._id)} className=" absolute right-10" />
                                 : ''}
                               <div className="flex items-center gap-3">
-                                <img className=" h-8 rounded-full aspect-square object-cover" src={comment.userId.avatar} />
+                                <Image width={40} height={40} alt="logo" className="rounded-full aspect-square object-cover" src={comment.userId.avatar} />
                                 <div>
                                   <p className=" text-sm">@{comment.userId.username}</p>
                                   <p className="text-sm font-thin">{calculateHoursElapsed(comment.createdAt)}</p>
@@ -462,20 +522,7 @@ export default function Home() {
             </>
           </div>
           {/* Right card */}
-          <div className=" max-md:hidden w-1/5 h-min flex flex-col gap-2 items-center">
-            {userSuggestion && userSuggestion.length > 0 ? (userSuggestion?.map((user: User) => (
-              user._id !== dataUser?._id ? (
-                <Card key={user._id.toString()} className=" w-full aspect-square flex justify-center p-2 flex-col items-center gap-4">
-                  <div className="flex items-center flex-col">
-                    <img className=" h-16 rounded-full aspect-square object-cover" src={user?.avatar} />
-                    <h2 className=" font-thin">@{user.username}</h2>
-                  </div>
-                  <Button onClick={(e) => handleRelation(e, user._id)}>Follow</Button>
-                </Card>
-              ) : ''
-            ))) : ''}
-          </div>
-        </div>
+        </div >
       </div >
     </section >
   );

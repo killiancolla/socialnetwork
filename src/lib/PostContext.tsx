@@ -6,7 +6,7 @@ import React, { ReactNode, createContext, useContext, useState } from 'react';
 
 interface PostContextType {
     posts: Post[],
-    fetchPosts: (userId: ObjectId) => void,
+    fetchPosts: (userId: ObjectId) => Promise<void>,
     setPosts: (posts: Post[]) => void
 }
 
@@ -16,7 +16,7 @@ export const PostProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const [posts, setPosts] = useState<Post[]>([]);
 
-    const fetchPosts = async (userId: ObjectId) => {
+    const fetchPosts = async (userId: ObjectId): Promise<void> => {
 
         try {
             const res = await fetch(`/api/posts/${userId}`, {
@@ -56,4 +56,4 @@ export const usePostContext = () => {
         throw new Error('usePostContext must be used within an PostProvider');
     }
     return context;
-}
+};

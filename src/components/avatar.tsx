@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import React, { useRef, useState } from 'react';
 
 interface AvatarUploadProps {
@@ -28,9 +29,12 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({ avatarUrl, onFileSelect }) 
                 style={{ display: 'none' }}
                 onChange={handleFileChange}
             />
-            <img
-                src={localAvatarUrl || avatarUrl}
-                className="w-40 rounded-full aspect-square object-cover cursor-pointer hover:opacity-70"
+            <Image
+                width={200}
+                height={200}
+                alt='avatar'
+                src={localAvatarUrl || avatarUrl || ''}
+                className="rounded-full aspect-square object-cover cursor-pointer hover:opacity-70"
                 onClick={() => fileInputRef.current?.click()}
             />
         </div>

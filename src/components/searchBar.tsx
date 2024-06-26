@@ -57,11 +57,11 @@ const SearchBar = () => {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
             />
-            {isLoading && <div className="absolute top-full mt-2 w-full bg-white shadow-md p-4">Loading...</div>}
+            {isLoading && <div className="absolute top-full mt-2 w-full dark:bg-black bg-white shadow-md p-4">Loading...</div>}
             {results.length > 0 && (
-                <ul className="absolute top-full mt-2 w-full bg-white shadow-md z-20 rounded-md">
+                <ul className="absolute top-full mt-2 w-full dark:bg-black bg-white shadow-md z-20 rounded-md">
                     {results.map((searchedUser: User, index) => (
-                        <li key={searchedUser._id.toString()} className={`p-2 ${results.length > index + 1 ? 'border-b' : 'rounded-b-md'} ${index == 0 ? 'rounded-t-md' : ''} hover:bg-gray-100 flex items-center justify-between`}>
+                        <li key={searchedUser._id.toString()} className={`p-2 ${results.length > index + 1 ? 'border-b' : 'rounded-b-md'} ${index == 0 ? 'rounded-t-md' : ''} dark:hover:bg-gray-900 hover:bg-gray-100 flex items-center justify-between`}>
                             <div className='flex items-center gap-4'>
                                 <img className=" h-10 rounded-full aspect-square object-cover" src={searchedUser?.avatar} />
                                 <p>@{searchedUser.username}</p>

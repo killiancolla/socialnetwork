@@ -20,6 +20,7 @@ export default function NavBar() {
 
     const { isAuthenticated, user, logout } = useAuth();
     const [dataUser, setDataUser] = useState<UserType | null>(null);
+    const [searching, setSearching] = useState(false);
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -55,56 +56,60 @@ export default function NavBar() {
     return (
         <>
             <div className=" md:hidden relative bg-secondary h-14 flex items-center justify-between px-14">
-
-                {isAuthenticated ?
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <img
-                                className="h-10 rounded-full aspect-square object-cover"
-                                src={dataUser?.avatar}
-                                alt="logo"
-                            />
-                            {/* <Button variant={"default"} size="icon" className=" bg-transparent hover:bg-transparent relative flex items-center justify-center h-6 w-6 focus-visible:ring-0 focus-visible:ring-offset-0 "><User className=" text-foreground" /></Button> */}
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-56">
-                            <a href="/account" className="">
-                                <DropdownMenuItem>
-                                    <CircleUser className="mr-2 h-4 w-4" />
-                                    <span>Update account</span>
-                                </DropdownMenuItem>
-                            </a>
-                            <DropdownMenuItem onClick={handleLogout}>
-                                <LogOut className="mr-2 h-4 w-4" />
-                                <span>Logout</span>
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                    : <div></div>}
-                <a href="/" className=" absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                <a href="/" className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
                     <Image
                         src='/logo.svg'
                         width={50}
                         height={50}
-                        alt="logo"
+                        alt="Logo"
+                        style={{ width: 'auto', height: '30px' }}
+                        priority
                     />
                 </a>
+                {isAuthenticated && searching ? (
+                    <SearchBar />
+                ) : (
+                    isAuthenticated && dataUser?.avatar ? (
+                        <div className="flex items-center space-x-4">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <img
+                                        className="h-10 rounded-full aspect-square object-cover"
+                                        src={dataUser?.avatar}
+                                        alt="User Avatar"
+                                    />
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-56">
+                                    <a href="/account" className="">
+                                        <DropdownMenuItem>
+                                            <CircleUser className="mr-2 h-4 w-4" />
+                                            <span>Update account</span>
+                                        </DropdownMenuItem>
+                                    </a>
+                                    <DropdownMenuItem onClick={handleLogout}>
+                                        <LogOut className="mr-2 h-4 w-4" />
+                                        <span>Logout</span>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    ) : <div></div>
+                )}
+
                 <div className="flex items-center space-x-4">
-                    {isAuthenticated ? (
-                        <>
-                            <Search />
-                        </>
-                    ) : ''
-                    }
+                    <Search onClick={() => setSearching(searching => !searching)} />
                     <ModeToggle />
                 </div>
-            </div>
+            </div >
             <div className=" max-md:hidden relative bg-secondary h-14 flex items-center justify-between px-14">
                 <a href="/">
                     <Image
                         src='/logo.svg'
                         width={50}
                         height={50}
+                        style={{ width: 'auto', height: '30px' }}
                         alt="logo"
+                        priority
                     />
                 </a>
                 {isAuthenticated ? (
@@ -117,7 +122,6 @@ export default function NavBar() {
                 <div className="flex items-center space-x-4">
                     {isAuthenticated ? (
                         <>
-                            <Search />
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant={"default"} size="icon" className=" bg-transparent hover:bg-transparent relative flex items-center justify-center h-6 w-6 focus-visible:ring-0 focus-visible:ring-offset-0 "><User className=" text-foreground" /></Button>

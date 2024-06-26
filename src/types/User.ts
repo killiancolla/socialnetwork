@@ -8,4 +8,5 @@ export interface User {
     surname: string;
     avatar: string;
     flag: boolean;
+    createdAt: string;
 }

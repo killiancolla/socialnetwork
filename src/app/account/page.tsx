@@ -1,6 +1,7 @@
 "use client";
 
 import AvatarUpload from "@/components/avatar";
+import Loading from "@/components/loading";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +9,7 @@ import { toast } from "@/components/ui/use-toast";
 import { useAuth } from "@/lib/AuthContext";
 import { User } from "@/types/User";
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { LoaderCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { storage } from '../../../firebase';
@@ -29,17 +31,21 @@ export default function Account() {
 
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+    const [isLoading, setIsLoading] = useState(true)
+    const [isUpdateLoading, setIsUpdateLoading] = useState(false);
+
     useEffect(() => {
         const fetchUserData = async () => {
+            setIsLoading(true)
             if (user) {
-                const res = await fetch(`/api/users/${user.userId}`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                });
+                try {
+                    const res = await fetch(`/api/users/${user.userId}`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
 
-                if (res.ok) {
                     const data = await res.json();
                     setDataUser(data);
                     setEmail(data.email);
@@ -47,8 +53,11 @@ export default function Account() {
                     setName(data.name);
                     setSurname(data.surname);
                     setAvatarUrl(data.avatar);
-                } else {
-                    console.error('Error fetching user data');
+                    setIsLoading(false)
+                } catch (error) {
+                    console.error(error);
+                } finally {
+                    setIsLoading(false);
                 }
             }
         };
@@ -73,6 +82,7 @@ export default function Account() {
 
     const handleUser = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        setIsUpdateLoading(true);
 
         let uploadedAvatarUrl = avatarUrl;
 
@@ -88,6 +98,7 @@ export default function Account() {
                 variant: 'destructive',
                 title: "Vos mots de passe ne correspondent pas."
             })
+            setIsUpdateLoading(false);
             return;
         }
 
@@ -105,9 +116,11 @@ export default function Account() {
             toast({
                 title: "Votre compte a bien été mis à jour."
             })
+            setIsUpdateLoading(false);
             console.log('Updated successfully');
         } else {
             console.error('Error updating user');
+            setIsUpdateLoading(false);
         }
     };
 
@@ -133,60 +146,72 @@ export default function Account() {
         }
     };
 
-    return (
-        <section className="flex justify-center items-center flex-col mt-10">
-            <form autoComplete="off" onSubmit={handleUser} className="w-5/12 space-y-10">
-                <div className="flex flex-row gap-10">
-                    {user && dataUser?._id.toString() && (
-                        <>
-                            <AvatarUpload
-                                avatarUrl={avatarUrl}
-                                onFileSelect={handleFileSelect}
-                            />
-                        </>
-                    )}
-                    <div className="flex items-start flex-col justify-center">
-                        <h2 className="font-bold">@{username}</h2>
-                        <h2>Member since 5 days</h2>
-                    </div>
-                </div>
-                <div className="space-y-6">
-                    <div className="flex justify-between gap-10">
-                        <div className="w-1/2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input type="email" id="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-                        </div>
-                        <div className="w-1/2">
-                            <Label htmlFor="account-username">Username</Label>
-                            <Input autoComplete="off" type="text" id="account-username" name="account-username" placeholder="Username" value={username} onChange={handleSetUsername} />
+    if (isLoading) {
+        return (
+            <Loading />
+        )
+    } else {
+        return (
+            <section className="flex justify-center items-center flex-col mt-10">
+                <form autoComplete="off" onSubmit={handleUser} className="max-sm:w-11/12 w-5/12 space-y-10">
+                    <div className="flex flex-row gap-10">
+                        {user && dataUser?._id.toString() && (
+                            <>
+                                <AvatarUpload
+                                    avatarUrl={avatarUrl}
+                                    onFileSelect={handleFileSelect}
+                                />
+                            </>
+                        )}
+                        <div className="flex items-start flex-col justify-center">
+                            <h2 className="font-bold">@{username}</h2>
+                            <h2>Member since 5 days</h2>
                         </div>
                     </div>
-                    <div className="flex justify-between gap-10">
-                        <div className="w-1/2">
-                            <Label htmlFor="name">Name</Label>
-                            <Input type="text" id="name" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
+                    <div className="space-y-6 max-sm:space-y-4">
+                        <div className="flex max-sm:flex-col justify-between max-sm:gap-4 sm:gap-10">
+                            <div className="w-1/2 max-sm:w-full">
+                                <Label htmlFor="email">Email</Label>
+                                <Input type="email" id="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                            </div>
+                            <div className="w-1/2 max-sm:w-full">
+                                <Label htmlFor="account-username">Username</Label>
+                                <Input autoComplete="off" type="text" id="account-username" name="account-username" placeholder="Username" value={username} onChange={handleSetUsername} />
+                            </div>
                         </div>
-                        <div className="w-1/2">
-                            <Label htmlFor="surname">Surname</Label>
-                            <Input type="text" id="surname" placeholder="Surname" value={surname} onChange={(e) => setSurname(e.target.value)} />
+                        <div className="flex max-sm:flex-col justify-between max-sm:gap-4 sm:gap-10">
+                            <div className="w-1/2 max-sm:w-full">
+                                <Label htmlFor="name">Name</Label>
+                                <Input type="text" id="name" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
+                            </div>
+                            <div className="w-1/2 max-sm:w-full">
+                                <Label htmlFor="surname">Surname</Label>
+                                <Input type="text" id="surname" placeholder="Surname" value={surname} onChange={(e) => setSurname(e.target.value)} />
+                            </div>
+                        </div>
+                        <div className="flex max-sm:flex-col justify-between max-sm:gap-4 sm:gap-10">
+                            <div className="w-1/2 max-sm:w-full">
+                                <Label htmlFor="newpass">New password</Label>
+                                <Input autoComplete="new-password" type="password" id="newpass" placeholder="New password" value={newpassword} onChange={(e) => setNewpassword(e.target.value)} />
+                            </div>
+                            <div className="w-1/2 max-sm:w-full">
+                                <Label htmlFor="newpassconfirm">Confirm password</Label>
+                                <Input autoComplete="new-password" type="password" id="newpassconfirm" placeholder="Confirm password" value={confirmpassword} onChange={(e) => setConfirmpassword(e.target.value)} />
+                            </div>
                         </div>
                     </div>
-                    <div className="flex justify-between gap-10">
-                        <div className="w-1/2">
-                            <Label htmlFor="newpass">New password</Label>
-                            <Input autoComplete="new-password" type="password" id="newpass" placeholder="New password" value={newpassword} onChange={(e) => setNewpassword(e.target.value)} />
-                        </div>
-                        <div className="w-1/2">
-                            <Label htmlFor="newpassconfirm">Confirm password</Label>
-                            <Input autoComplete="new-password" type="password" id="newpassconfirm" placeholder="Confirm password" value={confirmpassword} onChange={(e) => setConfirmpassword(e.target.value)} />
-                        </div>
+                    <div>
+                        <Button type="submit">{isUpdateLoading ? (
+                            <svg className="animate-spin h-full w-full" viewBox="0 0 24 24">
+                                <LoaderCircle />
+                            </svg>
+                        ) : 'Save'}</Button>
+                        <Button variant={"link"} className="ml-4" onClick={(e) => handleDeleteUser(e)}>Delete account</Button>
                     </div>
-                </div>
-                <div>
-                    <Button type="submit">Save</Button>
-                    <Button variant={"link"} className="ml-4" onClick={(e) => handleDeleteUser(e)}>Delete account</Button>
-                </div>
-            </form>
-        </section>
-    );
+                </form>
+            </section>
+        );
+    }
+
+
 }

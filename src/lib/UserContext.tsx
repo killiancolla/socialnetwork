@@ -8,7 +8,7 @@ interface UserContextType {
     followers: any,
     follow: any,
     userSuggestion: any,
-    fetchDatas: (userId: ObjectId) => void,
+    fetchDatas: (userId: ObjectId) => Promise<void>,
     followUser: (userId: ObjectId, followId: ObjectId) => void,
     unfollowUser: (userId: ObjectId, followId: ObjectId) => void
 }
@@ -21,7 +21,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [followers, setFollowers] = useState<User[] | null>([])
     const [follow, setFollow] = useState<User[] | null>([])
 
-    const fetchDatas = async (userId: ObjectId) => {
+    const fetchDatas = async (userId: ObjectId): Promise<void> => {
         const res = await fetch(`/api/users/suggestion?userId=${userId}`, {
             method: 'GET',
             headers: {
@@ -88,4 +88,4 @@ export const useUserContext = () => {
         throw new Error('useUserContext must be used within an UserProvider');
     }
     return context;
-}
+};
