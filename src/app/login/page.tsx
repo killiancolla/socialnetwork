@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import SparklesText from "@/components/ui/sparkles-text";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
+import { Flower2 } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import { useState } from "react";
 import { useAuth } from '../../lib/AuthContext';
@@ -118,7 +119,11 @@ export default function Login() {
                     </form>
                 </TabsContent>
             </Tabs>
-            <div className="max-lg:hidden w-1/2 bg-red-200 h-full"></div>
+            <div className="max-lg:hidden w-1/2 bg-foreground h-full text-background flex justify-center items-center flex-col gap-2">
+                <Flower2 className=" h-16 w-16" />
+                <h1 className=" font-bold text-3xl">Welcome to our Platform</h1>
+                <h2 className=" w-1/2 font-thin text-center leading-7">Our platform empowers you to create, collaborate, and innovate like never before. Join us on this exciting journey.</h2>
+            </div>
         </section>
     );
 }

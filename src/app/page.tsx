@@ -27,7 +27,7 @@ import { useUserContext } from "@/lib/UserContext";
 import { Post } from "@/types/Post";
 import { User } from "@/types/User";
 import Cookies from 'js-cookie';
-import { MessageCircle, Plus, ThumbsUp, Trash2 } from 'lucide-react';
+import { ChevronDown, MessageCircle, Minus, Plus, ThumbsUp, Trash2 } from 'lucide-react';
 import { ObjectId } from "mongoose";
 import Image from "next/image";
 import { useEffect, useState } from "react";
@@ -42,6 +42,7 @@ export default function Home() {
   const [postValue, setPostValue] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [relationUpdated, setRelationUpdated] = useState(false);
+  const [isDropDown, setIsDropDown] = useState(false);
 
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [isLoadingPost, setIsLoadingPost] = useState(true);
@@ -349,7 +350,23 @@ export default function Home() {
         <div className="max-md:flex-col flex gap-4 p-2 w-full relative">
           {/* Left card */}
           <div className="max-md:w-full w-1/3 h-min flex flex-col gap-4">
-            <Card className=" p-10 flex flex-col justify-center items-center gap-2 md:aspect-square">
+            <Card className={`md:hidden max-md:${isDropDown ? 'hidden' : ''} p-4 flex flex-row justify-around items-center gap-2 md:aspect-square`}>
+              <Image
+                height={1000}
+                width={1000}
+                alt="logo"
+                priority={true}
+                className=" h-20 w-20 rounded-full object-cover"
+                src={dataUser?.avatar ?? ""}
+              />
+              <div className="flex flex-col">
+                <h2 className="mt-2 font-medium">{dataUser?.name} {dataUser?.surname}</h2>
+                <h2 className=" font-thin">@{dataUser?.username}</h2>
+              </div>
+              <ChevronDown onClick={() => setIsDropDown(true)} />
+            </Card>
+            <Card className={`relative max-md:${isDropDown ? '' : 'hidden'} p-10 flex flex-col justify-center items-center gap-2 md:aspect-square`}>
+              <Minus onClick={() => setIsDropDown(false)} className="absolute top-5 right-5 md:hidden" />
               <div className="flex items-center flex-col">
                 <Image
                   height={1000}
@@ -414,7 +431,7 @@ export default function Home() {
               </div>
             </Card>
             {userSuggestion.length > 0 && (
-              <Card className=" pb-6 max-md:hidden w-full h-min flex flex-col gap-2 items-center">
+              <Card className=" pb-6 w-full h-min flex flex-col gap-2 items-center">
                 <CardHeader className="flex items-center justify-between">
                   <div className="text-lg font-bold">Friend Suggestions</div>
                 </CardHeader>
